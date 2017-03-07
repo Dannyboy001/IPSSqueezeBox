@@ -46,7 +46,7 @@ class LMSSplitter extends IPSModule
             }
         }
 
-        if ($this->ReadPropertyString('Port') == '')
+        if ($this->ReadPropertyInteger('Port') == 0)
         {
             if ($Open)
             {
@@ -169,7 +169,6 @@ class LMSSplitter extends IPSModule
                     }
                     break;
                 case KR_INIT:
-
                     if ($NewState == IS_ACTIVE)
                         $this->SetStatus(IS_EBASE + 3);
                     else
@@ -275,7 +274,7 @@ class LMSSplitter extends IPSModule
         return $CreatedPlayers;
     }
 
-    public function GetPlayerInfo(integer $Index)
+    public function GetPlayerInfo(int $Index)
     {
         if (!is_int($Index))
         {
@@ -340,7 +339,7 @@ class LMSSplitter extends IPSModule
         return $ret;
     }
 
-    public function GetSongInfoByFileID(integer $FileID)
+    public function GetSongInfoByFileID(int $FileID)
     {
         if (!is_int($FileID))
         {
@@ -429,7 +428,7 @@ class LMSSplitter extends IPSModule
     }
 
 //
-    public function DeletePlaylist(integer $PlayListId) // ToDo antwort zerlegen
+    public function DeletePlaylist(int $PlayListId) // ToDo antwort zerlegen
     {
         if (!is_int($PlayListId))
         {
@@ -452,7 +451,7 @@ class LMSSplitter extends IPSModule
     }
 
 //
-    public function AddFileToPlaylist(integer $PlayListId, string $SongUrl, integer $Track = null)
+    public function AddFileToPlaylist(int $PlayListId, string $SongUrl, int $Track = null)
     {
         $raw = $this->SendLMSData(new LMSData(array('playlists', 'edit'), array('cmd:add', 'playlist_id:' . $PlayListId, 'url:' . rawurlencode($SongUrl))));
         $Data = new LMSTaggingData($raw);
@@ -476,7 +475,7 @@ class LMSSplitter extends IPSModule
     }
 
 //
-    public function DeleteFileFromPlaylist(integer $PlayListId, integer $Track)
+    public function DeleteFileFromPlaylist(int $PlayListId, int $Track)
     {
         $ret = $this->SendLMSData(new LMSData(array('playlists', 'edit'), array('cmd:delete', 'playlist_id:' . $PlayListId, 'index:' . $Track)));
         return $ret;
@@ -956,7 +955,7 @@ LMS_DisplayPlaylist($_IPS["TARGET"],$Config);
 // Daten senden
         try
         {
-            $ret = IPS_SendDataToParent($this->InstanceID, json_encode(Array("DataID" => "{79827379-F36E-4ADA-8A95-5F8D1DC92FA9}", "Buffer" => utf8_encode($Data . chr(0x0d)))));
+            $ret = parent::SendDataToParent(json_encode(Array("DataID" => "{79827379-F36E-4ADA-8A95-5F8D1DC92FA9}", "Buffer" => utf8_encode($Data . chr(0x0d)))));
         }
         catch (Exception $exc)
         {
@@ -968,11 +967,6 @@ LMS_DisplayPlaylist($_IPS["TARGET"],$Config);
         return $ret;
     }
 
-// Sende-Routine an den Child
-    protected function SendDataToChildren($Data)
-    {
-        return IPS_SendDataToChildren($this->InstanceID, $Data);
-    }
 
 ################## Datenaustausch      
 // Sende-Routine des LMSData-Objektes an den Parent

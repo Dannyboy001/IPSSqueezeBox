@@ -432,7 +432,7 @@ if (isset($_GET["Index"]))
         return trim($Name);
     }
 
-    public function SetSync(integer $SlaveInstanceID)
+    public function SetSync(int $SlaveInstanceID)
     {
         $id = @IPS_GetInstance($SlaveInstanceID);
         if ($id === FALSE)
@@ -509,7 +509,7 @@ if (isset($_GET["Index"]))
      * true bei erfolgreicher Ausführung und Rückmeldung
      * @exception 
      */
-    public function SetSleep(integer $Seconds)
+    public function SetSleep(int $Seconds)
     {
         $ret = $this->SendLSQData(new LSQData(LSQResponse::sleep, $Seconds));
         $this->_SetSleep($Seconds);
@@ -632,12 +632,12 @@ if (isset($_GET["Index"]))
     /**
      * Setzten der Lautstärke.
      *
-     * @param integer $Value 
+     * @param int $Value 
      * @return boolean
      * true bei erfolgreicher Ausführung und Rückmeldung
      * @exception 
      */
-    public function SetVolume(integer $Value)
+    public function SetVolume(int $Value)
     {
         if (!$this->init())
             return false;
@@ -670,12 +670,12 @@ if (isset($_GET["Index"]))
     /**
      * Setzt den Bass-Wert.
      *
-     * @param integer $Value 
+     * @param int $Value 
      * @return boolean
      * true bei erfolgreicher Ausführung und Rückmeldung
      * @exception 
      */
-    public function SetBass(integer $Value)
+    public function SetBass(int $Value)
     {
         if (!$this->init())
             return false;
@@ -705,12 +705,12 @@ if (isset($_GET["Index"]))
     /**
      * Setzt den Treble-Wert.
      *
-     * @param integer $Value 
+     * @param int $Value 
      * @return boolean
      * true bei erfolgreicher Ausführung und Rückmeldung
      * @exception 
      */
-    public function SetTreble(integer $Value)
+    public function SetTreble(int $Value)
     {
         if (!$this->init())
             return false;
@@ -739,12 +739,12 @@ if (isset($_GET["Index"]))
     /**
      * Setzt den Pitch-Wert.
      *
-     * @param integer $Value 
+     * @param int $Value 
      * @return boolean
      * true bei erfolgreicher Ausführung und Rückmeldung
      * @exception 
      */
-    public function SetPitch(integer $Value)
+    public function SetPitch(int $Value)
     {
         if (!$this->init())
             return false;
@@ -773,14 +773,14 @@ if (isset($_GET["Index"]))
     /**
      * Setzten der Stummschaltung.
      *
-     * @param bolean $Value 
+     * @param bool $Value 
      * true = Stumm an
      * false = Stumm aus
      * @return boolean
      * true bei erfolgreicher Ausführung und Rückmeldung
      * @exception 
      */
-    public function SetMute(boolean $Value)
+    public function SetMute(bool $Value)
     {
         if (!$this->init())
             return false;
@@ -813,7 +813,7 @@ if (isset($_GET["Index"]))
     /**
      * Setzen des Wiederholungsmodus.
      *
-     * @param integer $Value 
+     * @param int $Value 
      * 0 = aus
      * 1 = Titel
      * 2 = Album
@@ -821,7 +821,7 @@ if (isset($_GET["Index"]))
      * true bei erfolgreicher Ausführung und Rückmeldung
      * @exception 
      */
-    public function SetRepeat(integer $Value)
+    public function SetRepeat(int $Value)
     {
         if (!$this->init())
             return false;
@@ -855,7 +855,7 @@ if (isset($_GET["Index"]))
     /**
      * Setzen des Zufallsmodus.
      *
-     * @param integer $Value 
+     * @param int $Value 
      * 0 = aus
      * 1 = Titel
      * 2 = Album
@@ -863,7 +863,7 @@ if (isset($_GET["Index"]))
      * true bei erfolgreicher Ausführung und Rückmeldung
      * @exception 
      */
-    public function SetShuffle(integer $Value)
+    public function SetShuffle(int $Value)
     {
         if (!$this->init())
             return false;
@@ -898,13 +898,13 @@ if (isset($_GET["Index"]))
     /**
      * Simuliert einen Tastendruck auf einen der Preset-Tasten.
      *
-     * @param integer $Value 
+     * @param int $Value 
      * 1 - 6 = Taste 1 bis 6
-     * @return boolean
+     * @return bool
      * true bei erfolgreicher Ausführung und Rückmeldung
      * @exception 
      */
-    public function SelectPreset(integer $Value)
+    public function SelectPreset(int $Value)
     {
         if (!$this->init())
             return false;
@@ -918,14 +918,14 @@ if (isset($_GET["Index"]))
      * Schaltet das Gerät ein oder aus.
      *
      * @access public
-     * @param boolean $Value 
+     * @param bool $Value 
      * false  = ausschalten
      * true = einschalten
      * @return boolean
      * true bei erfolgreicher Ausführung und Rückmeldung
      * @exception 
      */
-    public function Power(boolean $Value)
+    public function Power(bool $Value)
     {
         if (!$this->init())
             return false;
@@ -945,7 +945,7 @@ if (isset($_GET["Index"]))
      * true bei erfolgreicher Ausführung und Rückmeldung
      * @exception 
      */
-    public function PlayTrack(integer $Index)
+    public function PlayTrack(int $Index)
     {
         if (!$this->init())
             return false;
@@ -989,11 +989,11 @@ if (isset($_GET["Index"]))
     /**
      * Setzt eine absolute Zeit-Position des aktuellen Titels.
      *
-     * @param integer $Value Zeit in Sekunden.
+     * @param int $Value Zeit in Sekunden.
      * @return boolean true bei erfolgreicher Ausführung und Rückmeldung.
      * @exception Wenn Befehl nicht ausgeführt werden konnte.
      */
-    public function SetPosition(integer $Value)
+    public function SetPosition(int $Value)
     {
         if (!$this->init())
             return false;
@@ -1115,7 +1115,7 @@ if (isset($_GET["Index"]))
         return (rawurldecode($ret[0]) == (string) $this->InstanceID);
     }
 
-    public function LoadPlaylistByAlbumID(integer $AlbumID)
+    public function LoadPlaylistByAlbumID(int $AlbumID)
     {
         if (!$this->init())
             return false;
@@ -1133,7 +1133,7 @@ if (isset($_GET["Index"]))
         throw new Exception("AlbumID not found.");
     }
 
-    public function LoadPlaylistByGenreID(integer $GenreID)
+    public function LoadPlaylistByGenreID(int $GenreID)
     {
         if (!$this->init())
             return false;
@@ -1150,7 +1150,7 @@ if (isset($_GET["Index"]))
         throw new Exception("GenreID not found.");
     }
 
-    public function LoadPlaylistByArtistID(integer $ArtistID)
+    public function LoadPlaylistByArtistID(int $ArtistID)
     {
         if (!$this->init())
             return false;
@@ -1168,7 +1168,7 @@ if (isset($_GET["Index"]))
         throw new Exception("ArtistID not found.");
     }
 
-    public function LoadPlaylistByPlaylistID(integer $PlaylistID)
+    public function LoadPlaylistByPlaylistID(int $PlaylistID)
     {
         if (!$this->init())
             return false;
@@ -1218,7 +1218,7 @@ if (isset($_GET["Index"]))
      *  ["tracknum"]=>string
      * @exception 
      */
-    public function GetSongInfoByTrackIndex(integer $Index)
+    public function GetSongInfoByTrackIndex(int $Index)
     {
         if (!$this->init())
             return false;
@@ -2130,7 +2130,7 @@ LSQ_DisplayPlaylist($_IPS["TARGET"],$Config);
         // Daten senden
         try
         {
-            $ret = IPS_SendDataToParent($this->InstanceID, json_encode(Array("DataID" => "{EDDCCB34-E194-434D-93AD-FFDF1B56EF38}", "LSQ" => $LSQData)));
+            $ret = parent::SendDataToParent(json_encode(Array("DataID" => "{EDDCCB34-E194-434D-93AD-FFDF1B56EF38}", "LSQ" => $LSQData)));
         }
         catch (Exception $exc)
         {

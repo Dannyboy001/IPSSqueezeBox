@@ -35,12 +35,12 @@
                     "onClick": "LMS_Rescan($id);"
                 },
                 {
-                    "type": "Switch",
+                    "type": "Button",
                     "label": "Aktive Player in IPS erzeugen",
                     "onClick": "LMS_CreateAllPlayer($id);"
                 },
                 {
-                    "type": "Switch",
+                    "type": "Button",
                     "label": "Lade Server Playlisten",
                     "onClick": "LMS_RefreshPlayerList($id);"
                 }
