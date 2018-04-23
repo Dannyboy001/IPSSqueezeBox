@@ -1003,7 +1003,7 @@ LMS_DisplayPlaylist($_IPS["TARGET"],$Config);
                 $this->unlock('LMSData');
 
                 if ($ret === false) { // Response-Warteschleife lief in Timeout
-//  Daten in ResponseBuffer löschen
+                    //  Daten in ResponseBuffer löschen
                     $this->ResetWaitForResponse();
                     // Fehler
                     $this->SetStatus(IS_EBASE + 3);

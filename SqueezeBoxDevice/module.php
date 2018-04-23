@@ -254,7 +254,7 @@ if (isset($_GET["Index"]))
     /**
      * Aktuellen Status des Devices ermitteln und, wenn verbunden, abfragen..
      *
-     * @return boolean
+     * @return bool
      */
     public function RequestAllState()
     {
@@ -328,8 +328,8 @@ if (isset($_GET["Index"]))
      *
      * @param string $Name
      *
-     * @return boolean
-     *                 true bei erfolgreicher Ausführung und Rückmeldung
+     * @return bool
+     *              true bei erfolgreicher Ausführung und Rückmeldung
      * @exception
      */
     public function RequestState(string $Ident)
@@ -391,8 +391,8 @@ if (isset($_GET["Index"]))
      *
      * @param string $Name
      *
-     * @return boolean
-     *                 true bei erfolgreicher Ausführung und Rückmeldung
+     * @return bool
+     *              true bei erfolgreicher Ausführung und Rückmeldung
      * @exception
      */
     public function SetName(string $Name)
@@ -498,8 +498,8 @@ if (isset($_GET["Index"]))
     /**
      * Restzeit bis zum Sleep setzen.
      *
-     * @return boolean
-     *                 true bei erfolgreicher Ausführung und Rückmeldung
+     * @return bool
+     *              true bei erfolgreicher Ausführung und Rückmeldung
      * @exception
      */
     public function SetSleep(int $Seconds)
@@ -513,7 +513,7 @@ if (isset($_GET["Index"]))
     /**
      * Restzeit bis zum Sleep lesen.
      *
-     * @return integer
+     * @return int
      * @exception
      */
     public function GetSleep()
@@ -527,8 +527,8 @@ if (isset($_GET["Index"]))
     /**
      * Simuliert einen Tastendruck.
      *
-     * @return boolean
-     *                 true bei erfolgreicher Ausführung und Rückmeldung
+     * @return bool
+     *              true bei erfolgreicher Ausführung und Rückmeldung
      * @exception
      */
     public function PreviousButton()
@@ -549,8 +549,8 @@ if (isset($_GET["Index"]))
     /**
      * Simuliert einen Tastendruck.
      *
-     * @return boolean
-     *                 true bei erfolgreicher Ausführung und Rückmeldung
+     * @return bool
+     *              true bei erfolgreicher Ausführung und Rückmeldung
      * @exception
      */
     public function NextButton()
@@ -571,8 +571,8 @@ if (isset($_GET["Index"]))
     /**
      * Startet die Wiedergabe.
      *
-     * @return boolean
-     *                 true bei erfolgreicher Ausführung und Rückmeldung
+     * @return bool
+     *              true bei erfolgreicher Ausführung und Rückmeldung
      * @exception
      */
     public function Play()
@@ -593,8 +593,8 @@ if (isset($_GET["Index"]))
     /**
      * Stoppt die Wiedergabe.
      *
-     * @return boolean
-     *                 true bei erfolgreicher Ausführung und Rückmeldung
+     * @return bool
+     *              true bei erfolgreicher Ausführung und Rückmeldung
      * @exception
      */
     public function Stop()
@@ -615,8 +615,8 @@ if (isset($_GET["Index"]))
     /**
      * Pausiert die Wiedergabe.
      *
-     * @return boolean
-     *                 true bei erfolgreicher Ausführung und Rückmeldung
+     * @return bool
+     *              true bei erfolgreicher Ausführung und Rückmeldung
      * @exception
      */
     public function Pause()
@@ -639,8 +639,8 @@ if (isset($_GET["Index"]))
      *
      * @param int $Value
      *
-     * @return boolean
-     *                 true bei erfolgreicher Ausführung und Rückmeldung
+     * @return bool
+     *              true bei erfolgreicher Ausführung und Rückmeldung
      * @exception
      */
     public function SetVolume(int $Value)
@@ -661,7 +661,7 @@ if (isset($_GET["Index"]))
     /**
      * Liefert die aktuelle Lautstärke von dem Device.
      *
-     * @return integer
+     * @return int
      * @exception
      */
     public function GetVolume()
@@ -681,8 +681,8 @@ if (isset($_GET["Index"]))
      *
      * @param int $Value
      *
-     * @return boolean
-     *                 true bei erfolgreicher Ausführung und Rückmeldung
+     * @return bool
+     *              true bei erfolgreicher Ausführung und Rückmeldung
      * @exception
      */
     public function SetBass(int $Value)
@@ -700,7 +700,7 @@ if (isset($_GET["Index"]))
     /**
      * Liefert den aktuellen Bass-Wert.
      *
-     * @return integer
+     * @return int
      * @exception
      */
     public function GetBass()
@@ -720,8 +720,8 @@ if (isset($_GET["Index"]))
      *
      * @param int $Value
      *
-     * @return boolean
-     *                 true bei erfolgreicher Ausführung und Rückmeldung
+     * @return bool
+     *              true bei erfolgreicher Ausführung und Rückmeldung
      * @exception
      */
     public function SetTreble(int $Value)
@@ -739,7 +739,7 @@ if (isset($_GET["Index"]))
     /**
      * Liefert den aktuellen Treble-Wert.
      *
-     * @return integer
+     * @return int
      * @exception
      */
     public function GetTreble()
@@ -759,8 +759,8 @@ if (isset($_GET["Index"]))
      *
      * @param int $Value
      *
-     * @return boolean
-     *                 true bei erfolgreicher Ausführung und Rückmeldung
+     * @return bool
+     *              true bei erfolgreicher Ausführung und Rückmeldung
      * @exception
      */
     public function SetPitch(int $Value)
@@ -778,7 +778,7 @@ if (isset($_GET["Index"]))
     /**
      * Liefert den aktuellen Pitch-Wert.
      *
-     * @return integer
+     * @return int
      * @exception
      */
     public function GetPitch()
@@ -800,8 +800,8 @@ if (isset($_GET["Index"]))
      *                    true = Stumm an
      *                    false = Stumm aus
      *
-     * @return boolean
-     *                 true bei erfolgreicher Ausführung und Rückmeldung
+     * @return bool
+     *              true bei erfolgreicher Ausführung und Rückmeldung
      * @exception
      */
     public function SetMute(bool $Value)
@@ -822,9 +822,9 @@ if (isset($_GET["Index"]))
     /**
      * Liefert den Status der Stummschaltung.
      *
-     * @return boolean
-     *                 true = Stumm an
-     *                 false = Stumm aus
+     * @return bool
+     *              true = Stumm an
+     *              false = Stumm aus
      * @exception
      */
     public function GetMute()
@@ -847,8 +847,8 @@ if (isset($_GET["Index"]))
      *                   1 = Titel
      *                   2 = Album
      *
-     * @return boolean
-     *                 true bei erfolgreicher Ausführung und Rückmeldung
+     * @return bool
+     *              true bei erfolgreicher Ausführung und Rückmeldung
      * @exception
      */
     public function SetRepeat(int $Value)
@@ -869,10 +869,10 @@ if (isset($_GET["Index"]))
     /**
      * Liefert den Wiederholungsmodus.
      *
-     * @return integer
-     *                 0 = aus
-     *                 1 = Titel
-     *                 2 = Album
+     * @return int
+     *             0 = aus
+     *             1 = Titel
+     *             2 = Album
      * @exception
      */
     public function GetRepeat()
@@ -895,8 +895,8 @@ if (isset($_GET["Index"]))
      *                   1 = Titel
      *                   2 = Album
      *
-     * @return boolean
-     *                 true bei erfolgreicher Ausführung und Rückmeldung
+     * @return bool
+     *              true bei erfolgreicher Ausführung und Rückmeldung
      * @exception
      */
     public function SetShuffle(int $Value)
@@ -918,10 +918,10 @@ if (isset($_GET["Index"]))
     /**
      * Liefert den Zufallsmodus.
      *
-     * @return integer
-     *                 0 = aus
-     *                 1 = Titel
-     *                 2 = Album
+     * @return int
+     *             0 = aus
+     *             1 = Titel
+     *             2 = Album
      * @exception
      */
     public function GetShuffle()
@@ -955,6 +955,7 @@ if (isset($_GET["Index"]))
         if (($Value < 1) or ($Value > 6)) {
             throw new Exception('Value invalid.');
         }
+
         return (bool) $this->SendLSQData(new LSQData([LSQResponse::button, 'preset_'.intval($Value).'.single'], ''));
     }
 
@@ -965,8 +966,8 @@ if (isset($_GET["Index"]))
      *                    false  = ausschalten
      *                    true = einschalten
      *
-     * @return boolean
-     *                 true bei erfolgreicher Ausführung und Rückmeldung
+     * @return bool
+     *              true bei erfolgreicher Ausführung und Rückmeldung
      * @exception
      */
     public function Power(bool $Value)
@@ -989,8 +990,8 @@ if (isset($_GET["Index"]))
      * @param int $Value
      *                   Track in der Wiedergabeliste auf welchen gesprungen werden soll.
      *
-     * @return boolean
-     *                 true bei erfolgreicher Ausführung und Rückmeldung
+     * @return bool
+     *              true bei erfolgreicher Ausführung und Rückmeldung
      * @exception
      */
     public function PlayTrack(int $Index)
@@ -1007,8 +1008,8 @@ if (isset($_GET["Index"]))
     /**
      * Springt in der aktuellen Wiedergabeliste auf den nächsten Titel.
      *
-     * @return boolean
-     *                 true bei erfolgreicher Ausführung und Rückmeldung
+     * @return bool
+     *              true bei erfolgreicher Ausführung und Rückmeldung
      * @exception
      */
     public function NextTrack()
@@ -1025,8 +1026,8 @@ if (isset($_GET["Index"]))
     /**
      * Springt in der aktuellen Wiedergabeliste auf den vorherigen Titel.
      *
-     * @return boolean
-     *                 true bei erfolgreicher Ausführung und Rückmeldung
+     * @return bool
+     *              true bei erfolgreicher Ausführung und Rückmeldung
      * @exception
      */
     public function PreviousTrack()
@@ -1065,8 +1066,8 @@ if (isset($_GET["Index"]))
     /**
      * Liest die aktuelle Zeit-Position des aktuellen Titels.
      *
-     * @return integer
-     *                 Zeit in Sekunden.
+     * @return int
+     *             Zeit in Sekunden.
      * @exception
      */
     public function GetPosition()
@@ -1086,8 +1087,8 @@ if (isset($_GET["Index"]))
      * @param string $Name
      *                     Der Name der Wiedergabeliste. Ist diese Liste auf dem Server schon vorhanden, wird sie überschrieben.
      *
-     * @return boolean
-     *                 true bei erfolgreicher Ausführung und Rückmeldung
+     * @return bool
+     *              true bei erfolgreicher Ausführung und Rückmeldung
      * @exception
      */
     public function SavePlaylist(string $Name)
@@ -1105,8 +1106,8 @@ if (isset($_GET["Index"]))
     /**
      * Speichert die aktuelle Wiedergabeliste vom Gerät in einer festen Wiedergabelisten-Datei auf dem LMS-Server.
      *
-     * @return boolean
-     *                 true bei erfolgreicher Ausführung und Rückmeldung
+     * @return bool
+     *              true bei erfolgreicher Ausführung und Rückmeldung
      * @exception
      */
     public function SaveTempPlaylist()
@@ -1142,6 +1143,7 @@ if (isset($_GET["Index"]))
         if (($ret == '/'.$Name) or ($ret == '\\'.$Name)) {
             throw new Exception('Playlist not found.');
         }
+
         return rawurldecode($ret);
     }
 
@@ -1166,14 +1168,15 @@ if (isset($_GET["Index"]))
         if (($ret == '/'.$Name) or ($ret == '\\'.$Name)) {
             throw new Exception('Playlist not found.');
         }
+
         return rawurldecode($ret);
     }
 
     /**
      * Lädt eine zuvor gespeicherte Wiedergabelisten-Datei und setzt die Wiedergabe fort.
      *
-     * @return boolean
-     *                 true bei erfolgreicher Ausführung und Rückmeldung
+     * @return bool
+     *              true bei erfolgreicher Ausführung und Rückmeldung
      * @exception
      */
     public function LoadTempPlaylist()
@@ -1323,6 +1326,7 @@ if (isset($_GET["Index"]))
         if (count($SongArray) == 1) {
             throw new Exception('Index not valid.');
         }
+
         return $SongArray;
     }
 
@@ -1805,6 +1809,7 @@ if (isset($_GET["Index"]))
         if (($Config === false) or (!is_array($Config))) {
             throw new Exception('Error on read Playlistconfig-Script');
         }
+
         try {
             $Data = $this->GetSongInfoOfCurrentPlaylist();
         } catch (Exception $exc) {
