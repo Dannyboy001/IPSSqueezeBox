@@ -1,14 +1,16 @@
-<?
+<?php
 
-require_once(__DIR__ . "/../SqueezeBoxClass.php");  // diverse Klassen
+require_once __DIR__.'/../SqueezeBoxClass.php';  // diverse Klassen
 
 class SqueezeboxDevice extends IPSModule
 {
-
     const isMAC = 1;
     const isIP = 2;
 
-    private $Address, $Interval, $Connected = 'noInit', $tempData;
+    private $Address;
+    private $Interval;
+    private $Connected = 'noInit';
+    private $tempData;
 
     public function Create()
     {
@@ -16,15 +18,15 @@ class SqueezeboxDevice extends IPSModule
         parent::Create();
 
         // 1. Verfügbarer LMS-Splitter wird verbunden oder neu erzeugt, wenn nicht vorhanden.
-        $this->ConnectParent("{96A9AB3A-2538-42C5-A130-FC34205A706A}");
+        $this->ConnectParent('{96A9AB3A-2538-42C5-A130-FC34205A706A}');
 
-        $this->RegisterPropertyString("Address", "");
-        $this->RegisterPropertyInteger("Interval", 2);
-        $this->RegisterPropertyString("CoverSize", "cover");
+        $this->RegisterPropertyString('Address', '');
+        $this->RegisterPropertyInteger('Interval', 2);
+        $this->RegisterPropertyString('CoverSize', 'cover');
 
         $ID = $this->RegisterScript('PlaylistDesign', 'Playlist Config', $this->CreatePlaylistConfigScript(), -7);
         IPS_SetHidden($ID, true);
-        $this->RegisterPropertyInteger("Playlistconfig", $ID);
+        $this->RegisterPropertyInteger('Playlistconfig', $ID);
     }
 
     public function Destroy()
@@ -32,8 +34,9 @@ class SqueezeboxDevice extends IPSModule
         parent::Destroy();
 
         $CoverID = @IPS_GetObjectIDByIdent('CoverIMG', $this->InstanceID);
-        if ($CoverID !== false)
+        if ($CoverID !== false) {
             @IPS_DeleteMedia($CoverID, true);
+        }
     }
 
     public function ApplyChanges()
@@ -43,47 +46,35 @@ class SqueezeboxDevice extends IPSModule
 
         // Addresse prüfen
         $Address = $this->ReadPropertyString('Address');
-        if ($Address == '')
-        {
+        if ($Address == '') {
             // Status inaktiv
             $this->SetStatus(104);
-        }
-        else
-        {
-            if (!strpos($Address, '.')) //keine IP ?
-            {
-                if (!strpos($Address, ':')) //keine MAC mit :
-                {
-                    if (!strpos($Address, '-')) //keine MAC mit -
-                    {// : einfügen 
+        } else {
+            if (!strpos($Address, '.')) { //keine IP ?
+                if (!strpos($Address, ':')) { //keine MAC mit :
+                    if (!strpos($Address, '-')) { //keine MAC mit -
+                    // : einfügen
                         //Länge muss 12 sein, sonst löschen
-                        if (strlen($Address) == 12)
-                        {
-                            $Address = strtolower(implode(":", str_split($Address, 2)));
+                        if (strlen($Address) == 12) {
+                            $Address = strtolower(implode(':', str_split($Address, 2)));
                             $this->SetStatus(102);
-                            // STATUS config OK
-                        }
-                        else
-                        {
+                        // STATUS config OK
+                        } else {
                             $Address = '';
                             $this->SetStatus(202);
                             // STATUS config falsch
                         }
                         IPS_SetProperty($this->InstanceID, 'Address', $Address);
                         IPS_ApplyChanges($this->InstanceID);
+
                         return;
-                    }
-                    else
-                    {
-                        if (strlen($Address) == 17)
-                        {
-                            //- gegen : ersetzen                    
+                    } else {
+                        if (strlen($Address) == 17) {
+                            //- gegen : ersetzen
                             $Address = strtolower(str_replace('-', ':', $Address));
                             $this->SetStatus(102);
-                            // STATUS config OK
-                        }
-                        else
-                        {                    //Länge muss 17 sein, sonst löschen
+                        // STATUS config OK
+                        } else {                    //Länge muss 17 sein, sonst löschen
                             $this->SetStatus(202);
 
                             $Address = '';
@@ -91,28 +82,25 @@ class SqueezeboxDevice extends IPSModule
                         }
                         IPS_SetProperty($this->InstanceID, 'Address', $Address);
                         IPS_ApplyChanges($this->InstanceID);
+
                         return;
                     }
-                }
-                else
-                { // OK : nun Länge prüfen
-                    //Länge muss 17 sein, sonst löschen                
-                    if (strlen($Address) <> 17)
-                    {                    //Länge muss 17 sein, sonst löschen
+                } else { // OK : nun Länge prüfen
+                    //Länge muss 17 sein, sonst löschen
+                    if (strlen($Address) != 17) {                    //Länge muss 17 sein, sonst löschen
                         $this->SetStatus(202);
 
                         $Address = '';
                         // STATUS config falsch
                         IPS_SetProperty($this->InstanceID, 'Address', $Address);
                         IPS_ApplyChanges($this->InstanceID);
+
                         return;
-                    }
-                    else
-                    {
-                        if ($Address <> strtolower($Address))
-                        {
+                    } else {
+                        if ($Address != strtolower($Address)) {
                             IPS_SetProperty($this->InstanceID, 'Address', strtolower($Address));
                             IPS_ApplyChanges($this->InstanceID);
+
                             return;
                         }
                     }
@@ -121,96 +109,94 @@ class SqueezeboxDevice extends IPSModule
             // TODO IP-Adresse prüfen fehlt !!!!
         }
 
-
         // Profile anlegen
-        $this->RegisterProfileIntegerEx("Status.Squeezebox", "Information", "", "", Array(
-            Array(0, "Prev", "", -1),
-            Array(1, "Stop", "", -1),
-            Array(2, "Play", "", -1),
-            Array(3, "Pause", "", -1),
-            Array(4, "Next", "", -1)
-        ));
-        $this->RegisterProfileInteger("Intensity.Squeezebox", "Intensity", "", " %", 0, 100, 1);
-        $this->RegisterProfileIntegerEx("Shuffle.Squeezebox", "Shuffle", "", "", Array(
-            Array(0, "off", "", -1),
-            Array(1, "Title", "", -1),
-            Array(2, "Album", "", -1)
-        ));
-        $this->RegisterProfileIntegerEx("Repeat.Squeezebox", "Repeat", "", "", Array(
-            Array(0, "off", "", -1),
-            Array(1, "Title", "", -1),
-            Array(2, "Playlist", "", -1)
-        ));
-        $this->RegisterProfileIntegerEx("Preset.Squeezebox", "Speaker", "", "", Array(
-            Array(1, "1", "", -1),
-            Array(2, "2", "", -1),
-            Array(3, "3", "", -1),
-            Array(4, "4", "", -1),
-            Array(5, "5", "", -1),
-            Array(6, "6", "", -1)
-        ));
-        $this->RegisterProfileInteger("Tracklist.Squeezebox." . $this->InstanceID, "", "", "", 1, 1, 1);
-        $this->RegisterProfileIntegerEx("SleepTimer.Squeezebox", "Gear", "", "", Array(
-            Array(0, "0", "", -1),
-            Array(900, "900", "", -1),
-            Array(1800, "1800", "", -1),
-            Array(2700, "2700", "", -1),
-            Array(3600, "3600", "", -1),
-            Array(5400, "5400", "", -1)
-        ));
-
+        $this->RegisterProfileIntegerEx('Status.Squeezebox', 'Information', '', '', [
+            [0, 'Prev', '', -1],
+            [1, 'Stop', '', -1],
+            [2, 'Play', '', -1],
+            [3, 'Pause', '', -1],
+            [4, 'Next', '', -1],
+        ]);
+        $this->RegisterProfileInteger('Intensity.Squeezebox', 'Intensity', '', ' %', 0, 100, 1);
+        $this->RegisterProfileIntegerEx('Shuffle.Squeezebox', 'Shuffle', '', '', [
+            [0, 'off', '', -1],
+            [1, 'Title', '', -1],
+            [2, 'Album', '', -1],
+        ]);
+        $this->RegisterProfileIntegerEx('Repeat.Squeezebox', 'Repeat', '', '', [
+            [0, 'off', '', -1],
+            [1, 'Title', '', -1],
+            [2, 'Playlist', '', -1],
+        ]);
+        $this->RegisterProfileIntegerEx('Preset.Squeezebox', 'Speaker', '', '', [
+            [1, '1', '', -1],
+            [2, '2', '', -1],
+            [3, '3', '', -1],
+            [4, '4', '', -1],
+            [5, '5', '', -1],
+            [6, '6', '', -1],
+        ]);
+        $this->RegisterProfileInteger('Tracklist.Squeezebox.'.$this->InstanceID, '', '', '', 1, 1, 1);
+        $this->RegisterProfileIntegerEx('SleepTimer.Squeezebox', 'Gear', '', '', [
+            [0, '0', '', -1],
+            [900, '900', '', -1],
+            [1800, '1800', '', -1],
+            [2700, '2700', '', -1],
+            [3600, '3600', '', -1],
+            [5400, '5400', '', -1],
+        ]);
 
         //Status-Variablen anlegen
-        $this->RegisterVariableBoolean("Power", "Power", "~Switch", 1);
-        $this->EnableAction("Power");
-        $this->RegisterVariableInteger("Status", "Status", "Status.Squeezebox", 3);
-        $this->EnableAction("Status");
-        $this->RegisterVariableInteger("Preset", "Preset", "Preset.Squeezebox", 2);
-        $this->EnableAction("Preset");
-        $this->RegisterVariableBoolean("Mute", "Mute", "~Switch", 4);
-        $this->EnableAction("Mute");
+        $this->RegisterVariableBoolean('Power', 'Power', '~Switch', 1);
+        $this->EnableAction('Power');
+        $this->RegisterVariableInteger('Status', 'Status', 'Status.Squeezebox', 3);
+        $this->EnableAction('Status');
+        $this->RegisterVariableInteger('Preset', 'Preset', 'Preset.Squeezebox', 2);
+        $this->EnableAction('Preset');
+        $this->RegisterVariableBoolean('Mute', 'Mute', '~Switch', 4);
+        $this->EnableAction('Mute');
 
-        $this->RegisterVariableInteger("Volume", "Volume", "Intensity.Squeezebox", 5);
-        $this->EnableAction("Volume");
-        $this->RegisterVariableInteger("Bass", "Bass", "Intensity.Squeezebox", 6);
-        $this->EnableAction("Bass");
-        $this->RegisterVariableInteger("Treble", "Treble", "Intensity.Squeezebox", 7);
-        $this->EnableAction("Treble");
-        $this->RegisterVariableInteger("Pitch", "Pitch", "Intensity.Squeezebox", 8);
-        $this->EnableAction("Pitch");
+        $this->RegisterVariableInteger('Volume', 'Volume', 'Intensity.Squeezebox', 5);
+        $this->EnableAction('Volume');
+        $this->RegisterVariableInteger('Bass', 'Bass', 'Intensity.Squeezebox', 6);
+        $this->EnableAction('Bass');
+        $this->RegisterVariableInteger('Treble', 'Treble', 'Intensity.Squeezebox', 7);
+        $this->EnableAction('Treble');
+        $this->RegisterVariableInteger('Pitch', 'Pitch', 'Intensity.Squeezebox', 8);
+        $this->EnableAction('Pitch');
 
-        $this->RegisterVariableInteger("Shuffle", "Shuffle", "Shuffle.Squeezebox", 9);
-        $this->EnableAction("Shuffle");
-        $this->RegisterVariableInteger("Repeat", "Repeat", "Repeat.Squeezebox", 10);
-        $this->EnableAction("Repeat");
-        $this->RegisterVariableInteger("Tracks", "Playlist Anzahl Tracks", "", 11);
-        $this->RegisterVariableInteger("Index", "Playlist Position", "Tracklist.Squeezebox." . $this->InstanceID, 12);
-        $this->EnableAction("Index");
+        $this->RegisterVariableInteger('Shuffle', 'Shuffle', 'Shuffle.Squeezebox', 9);
+        $this->EnableAction('Shuffle');
+        $this->RegisterVariableInteger('Repeat', 'Repeat', 'Repeat.Squeezebox', 10);
+        $this->EnableAction('Repeat');
+        $this->RegisterVariableInteger('Tracks', 'Playlist Anzahl Tracks', '', 11);
+        $this->RegisterVariableInteger('Index', 'Playlist Position', 'Tracklist.Squeezebox.'.$this->InstanceID, 12);
+        $this->EnableAction('Index');
 
-        $this->RegisterVariableString("Playlistname", "Playlist", "", 19);
-        $this->RegisterVariableString("Album", "Album", "", 20);
-        $this->RegisterVariableString("Title", "Titel", "", 21);
-        $this->RegisterVariableString("Interpret", "Interpret", "", 22);
-        $this->RegisterVariableString("Genre", "Stilrichtung", "", 23);
-        $this->RegisterVariableString("Duration", "Dauer", "", 24);
-        $this->RegisterVariableString("Position", "Spielzeit", "", 25);
-        $this->RegisterVariableInteger("Position2", "Position", "Intensity.Squeezebox", 26);
-        $this->EnableAction("Position2");
-        $this->RegisterVariableString("Playlist", "Playlist", "~HTMLBox", 29);
+        $this->RegisterVariableString('Playlistname', 'Playlist', '', 19);
+        $this->RegisterVariableString('Album', 'Album', '', 20);
+        $this->RegisterVariableString('Title', 'Titel', '', 21);
+        $this->RegisterVariableString('Interpret', 'Interpret', '', 22);
+        $this->RegisterVariableString('Genre', 'Stilrichtung', '', 23);
+        $this->RegisterVariableString('Duration', 'Dauer', '', 24);
+        $this->RegisterVariableString('Position', 'Spielzeit', '', 25);
+        $this->RegisterVariableInteger('Position2', 'Position', 'Intensity.Squeezebox', 26);
+        $this->EnableAction('Position2');
+        $this->RegisterVariableString('Playlist', 'Playlist', '~HTMLBox', 29);
 
-        $this->RegisterVariableInteger("Signalstrength", "Signalstärke", "Intensity.Squeezebox", 30);
-        $this->RegisterVariableInteger("SleepTimer", "Einschlaftimer", "SleepTimer.Squeezebox", 31);
-        $this->EnableAction("SleepTimer");
-        $this->RegisterVariableString("SleepTimeout", "Ausschalten in ", "", 32);
+        $this->RegisterVariableInteger('Signalstrength', 'Signalstärke', 'Intensity.Squeezebox', 30);
+        $this->RegisterVariableInteger('SleepTimer', 'Einschlaftimer', 'SleepTimer.Squeezebox', 31);
+        $this->EnableAction('SleepTimer');
+        $this->RegisterVariableString('SleepTimeout', 'Ausschalten in ', '', 32);
 
         // Workaround für persistente Daten der Instanz.
-        $this->RegisterVariableBoolean("can_seek", "can_seek", "", -5);
-        $this->RegisterVariableString("BufferOUT", "BufferOUT", "", -4);
-        $this->RegisterVariableBoolean("WaitForResponse", "WaitForResponse", "", -5);
-        $this->RegisterVariableBoolean("Connected", "Connected", "", -3);
+        $this->RegisterVariableBoolean('can_seek', 'can_seek', '', -5);
+        $this->RegisterVariableString('BufferOUT', 'BufferOUT', '', -4);
+        $this->RegisterVariableBoolean('WaitForResponse', 'WaitForResponse', '', -5);
+        $this->RegisterVariableBoolean('Connected', 'Connected', '', -3);
 
-        $this->RegisterVariableInteger("PositionRAW", "PositionRAW", "", -1);
-        $this->RegisterVariableInteger("DurationRAW", "DurationRAW", "", -2);
+        $this->RegisterVariableInteger('PositionRAW', 'PositionRAW', '', -1);
+        $this->RegisterVariableInteger('DurationRAW', 'DurationRAW', '', -2);
         IPS_SetHidden($this->GetIDForIdent('can_seek'), true);
         IPS_SetHidden($this->GetIDForIdent('BufferOUT'), true);
         IPS_SetHidden($this->GetIDForIdent('WaitForResponse'), true);
@@ -219,43 +205,46 @@ class SqueezeboxDevice extends IPSModule
         IPS_SetHidden($this->GetIDForIdent('DurationRAW'), true);
 
         // Eigene Scripte
-        $sid = $this->RegisterScript("WebHookPlaylist", "WebHookPlaylist", '<? //Do not delete or modify.
+        $sid = $this->RegisterScript('WebHookPlaylist', 'WebHookPlaylist', '<? //Do not delete or modify.
 if (isset($_GET["Index"]))
-    LSQ_PlayTrack(' . $this->InstanceID . ',$_GET["Index"]);
+    LSQ_PlayTrack('.$this->InstanceID.',$_GET["Index"]);
 ', -8);
         IPS_SetHidden($sid, true);
-        if (IPS_GetKernelRunlevel() == KR_READY)
-            $this->RegisterHook('/hook/SqueezeBoxPlaylist' . $this->InstanceID, $sid);
+        if (IPS_GetKernelRunlevel() == KR_READY) {
+            $this->RegisterHook('/hook/SqueezeBoxPlaylist'.$this->InstanceID, $sid);
+        }
 
         $ID = $this->RegisterScript('PlaylistDesign', 'Playlist Config', $this->CreatePlaylistConfigScript(), -7);
         IPS_SetHidden($ID, true);
 
         // Adresse nicht leer ?
         // Parent vorhanden und nicht in Fehlerstatus ?
-        if ($this->Init(false))
-        {
+        if ($this->Init(false)) {
 
             // Ist Device (Player) connected ?
             $Data = new LSQData(LSQResponse::connected, '?');
 
             // Dann Status von LMS holen
-            if ($this->SendLSQData($Data) == 1)
+            if ($this->SendLSQData($Data) == 1) {
                 $this->SetConnected(true);
+            }
             // nicht connected
-            else
+            else {
                 $this->SetConnected(false);
+            }
         }
         $this->_SetSeekable((bool) GetValueBoolean($this->GetIDForIdent('can_seek')));
     }
 
     /**
      * This function will be available automatically after the module is imported with the module control.
-     * Using the custom prefix this function will be callable from PHP and JSON-RPC through:
+     * Using the custom prefix this function will be callable from PHP and JSON-RPC through:.
      */
-################## PUBLIC
+    //################# PUBLIC
+
     /**
      * This function will be available automatically after the module is imported with the module control.
-     * Using the custom prefix this function will be callable from PHP and JSON-RPC through:
+     * Using the custom prefix this function will be callable from PHP and JSON-RPC through:.
      */
     public function GenerateTTSFile(string $Text, string $File = null)
     {
@@ -269,16 +258,18 @@ if (isset($_GET["Index"]))
      */
     public function RequestAllState()
     {
-        if (!$this->init())
+        if (!$this->init()) {
             return false;
+        }
 
         /*        $this->init();
 
           if ($this->Connected)
           { */
 
-        if ($this->SendLSQData(new LSQData(LSQResponse::listen, '1')) <> '1')
+        if ($this->SendLSQData(new LSQData(LSQResponse::listen, '1')) != '1') {
             return false;
+        }
 
         $this->SendLSQData(
                 new LSQData(LSQResponse::power, '?', false)
@@ -308,7 +299,7 @@ if (isset($_GET["Index"]))
           new LSQData(array(LSQResponse::mixer, LSQResponse::muting), '?', false)
           ); */
         $this->SendLSQData(
-                new LSQData(array('status', 0, '1'), 'tags:gladiqrRtueJINpsy')
+                new LSQData(['status', 0, '1'], 'tags:gladiqrRtueJINpsy')
         );
         SetValueInteger($this->GetIDForIdent('Status'), 1);
         $this->SendLSQData(
@@ -335,49 +326,49 @@ if (isset($_GET["Index"]))
     /**
      * Setzten den Namen in dem Device.
      *
-     * @param string $Name 
+     * @param string $Name
+     *
      * @return boolean
-     * true bei erfolgreicher Ausführung und Rückmeldung
-     * @exception 
+     *                 true bei erfolgreicher Ausführung und Rückmeldung
+     * @exception
      */
     public function RequestState(string $Ident)
     {
-        switch ($Ident)
-        {
-            case "Power":
+        switch ($Ident) {
+            case 'Power':
                 $Data = new LSQData(LSQResponse::power, '?', false);
                 break;
 
-            case "Status":
+            case 'Status':
                 $Data = new LSQData(LSQResponse::status, '?', false);
                 break;
-            case "Mute":
+            case 'Mute':
                 break;
-            case "Volume":
+            case 'Volume':
                 break;
-            case "Bass":
+            case 'Bass':
                 break;
-            case "Treble":
+            case 'Treble':
                 break;
-            case "Pitch":
+            case 'Pitch':
                 break;
-            case "Shuffle":
+            case 'Shuffle':
                 break;
-            case "Repeat":
+            case 'Repeat':
                 break;
-            case "Tracks":
-            case "Index":
-            case "Album":
-            case "Title":
-            case "Interpret":
-            case "Genre":
-            case "Duration":
-            case "Position":
+            case 'Tracks':
+            case 'Index':
+            case 'Album':
+            case 'Title':
+            case 'Interpret':
+            case 'Genre':
+            case 'Duration':
+            case 'Position':
                 break;
-            case "Signalstrength":
+            case 'Signalstrength':
                 break;
 
-            case "SleepTimeout":
+            case 'SleepTimeout':
             default:
                 break;
         }
@@ -385,10 +376,12 @@ if (isset($_GET["Index"]))
 
     public function RawSend($Command, $Value, $needResponse)
     {
-        if (!$this->init())
+        if (!$this->init()) {
             return false;
+        }
 
         $LSQData = new LSQData($Command, $Value, $needResponse);
+
         return $this->SendLSQData($LSQData);
         //return $this->SendDataToParent($LSQData);
     }
@@ -396,22 +389,25 @@ if (isset($_GET["Index"]))
     /**
      * Setzten den Namen in dem Device.
      *
-     * @param string $Name 
+     * @param string $Name
+     *
      * @return boolean
-     * true bei erfolgreicher Ausführung und Rückmeldung
-     * @exception 
+     *                 true bei erfolgreicher Ausführung und Rückmeldung
+     * @exception
      */
     public function SetName(string $Name)
     {
-        if (!$this->init())
+        if (!$this->init()) {
             return false;
+        }
 
         $ret = rawurldecode($this->SendLSQData(new LSQData(LSQResponse::name, rawurlencode((string) $Name))));
-        if ($ret == $Name)
-        {
+        if ($ret == $Name) {
             $this->_NewName($Name);
+
             return true;
         }
+
         return false;
     }
 
@@ -419,113 +415,112 @@ if (isset($_GET["Index"]))
      * Liefert den Namen von dem Device.
      *
      * @return string
-     * @exception 
+     * @exception
      */
     public function GetName()
     {
-        if (!$this->init())
+        if (!$this->init()) {
             return false;
-
+        }
 
         $Name = rawurldecode($this->SendLSQData(new LSQData(LSQResponse::name, '?')));
         $this->_NewName($Name);
+
         return trim($Name);
     }
 
     public function SetSync(int $SlaveInstanceID)
     {
         $id = @IPS_GetInstance($SlaveInstanceID);
-        if ($id === FALSE)
+        if ($id === false) {
             throw new Exception('Unknown LSQ_PlayerInstanz');
-        if ($id['ModuleInfo']['ModuleID'] <> '{118189F9-DC7E-4DF4-80E1-9A4DF0882DD7}')
+        }
+        if ($id['ModuleInfo']['ModuleID'] != '{118189F9-DC7E-4DF4-80E1-9A4DF0882DD7}') {
             throw new Exception('SlaveInstance in not a LSQ_PlayerInstanz');
+        }
         $ClientMac = IPS_GetProperty($SlaveInstanceID, 'Address');
-        if (($ClientMac === '') or ( $ClientMac === false))
-        {
+        if (($ClientMac === '') or ($ClientMac === false)) {
             throw new Exception('SlaveInstance Address is not set.');
         }
         $ret = $this->SendLSQData(new LSQData(LSQResponse::sync, $ClientMac));
-        return (rawurldecode($ret) == $ClientMac);
+
+        return rawurldecode($ret) == $ClientMac;
     }
 
     /**
-     * Gibt alle mit diesem Gerät syncronisierte Instanzen zurück
+     * Gibt alle mit diesem Gerät syncronisierte Instanzen zurück.
      *
      * @return string|array
-     * @exception 
+     * @exception
      */
     public function GetSync()
     {
-        $Addresses = array();
-        $FoundInstanzIDs = array();
+        $Addresses = [];
+        $FoundInstanzIDs = [];
         $AllPlayerIDs = IPS_GetInstanceListByModuleID('{118189F9-DC7E-4DF4-80E1-9A4DF0882DD7}');
 
-        foreach ($AllPlayerIDs as $DeviceID)
-        {
+        foreach ($AllPlayerIDs as $DeviceID) {
             $Addresses[$DeviceID] = IPS_GetProperty($DeviceID, 'Address');
         }
 
         $ret = $this->SendLSQData(new LSQData(LSQResponse::sync, '?'));
-        if ($ret == '-')
+        if ($ret == '-') {
             return false;
-        if (strpos($ret, ',') === false)
-        {
-            $FoundInstanzIDs[0] = array_search(rawurldecode($ret), $Addresses);
         }
-        else
-        {
+        if (strpos($ret, ',') === false) {
+            $FoundInstanzIDs[0] = array_search(rawurldecode($ret), $Addresses);
+        } else {
             $Search = explode(',', $ret);
-            foreach ($Search as $Value)
-            {
+            foreach ($Search as $Value) {
                 $FoundInstanzIDs[] = array_search(rawurldecode($Value), $Addresses);
             }
         }
-        if (count($FoundInstanzIDs) > 0)
-        {
+        if (count($FoundInstanzIDs) > 0) {
             return $FoundInstanzIDs;
-        }
-        else
-        {
+        } else {
             return false;
         }
     }
 
     /**
-     * Sync dieses Gerätes aufheben
+     * Sync dieses Gerätes aufheben.
      *
-     * @return boolean true bei erfolgreicher Ausführung und Rückmeldung
-     * @exception 
+     * @return bool true bei erfolgreicher Ausführung und Rückmeldung
+     * @exception
      */
     public function SetUnSync()
     {
         $ret = $this->SendLSQData(new LSQData(LSQResponse::sync, '-'));
-        return ($ret == '-');
+
+        return $ret == '-';
     }
 
     /**
      * Restzeit bis zum Sleep setzen.
      *
      * @return boolean
-     * true bei erfolgreicher Ausführung und Rückmeldung
-     * @exception 
+     *                 true bei erfolgreicher Ausführung und Rückmeldung
+     * @exception
      */
     public function SetSleep(int $Seconds)
     {
         $ret = $this->SendLSQData(new LSQData(LSQResponse::sleep, $Seconds));
         $this->_SetSleep($Seconds);
-        return ($ret == $Seconds);
+
+        return $ret == $Seconds;
     }
 
     /**
      * Restzeit bis zum Sleep lesen.
      *
      * @return integer
-     * @exception 
+     * @exception
      */
     public function GetSleep()
     {
         $ret = intval($this->SendLSQData(new LSQData(LSQResponse::sleep, '?')));
         $this->_SetSleep($ret);
+
         return $ret;
     }
 
@@ -533,19 +528,21 @@ if (isset($_GET["Index"]))
      * Simuliert einen Tastendruck.
      *
      * @return boolean
-     * true bei erfolgreicher Ausführung und Rückmeldung
-     * @exception 
+     *                 true bei erfolgreicher Ausführung und Rückmeldung
+     * @exception
      */
     public function PreviousButton()
     {
-        if (!$this->init())
+        if (!$this->init()) {
             return false;
+        }
 
-        if ($this->SendLSQData(new LSQData(array('button', 'jump_rew'), '')))
-        {
+        if ($this->SendLSQData(new LSQData(['button', 'jump_rew'], ''))) {
             $this->_SetPlay();
+
             return true;
         }
+
         return false;
     }
 
@@ -553,470 +550,533 @@ if (isset($_GET["Index"]))
      * Simuliert einen Tastendruck.
      *
      * @return boolean
-     * true bei erfolgreicher Ausführung und Rückmeldung
-     * @exception 
+     *                 true bei erfolgreicher Ausführung und Rückmeldung
+     * @exception
      */
     public function NextButton()
     {
-        if (!$this->init())
+        if (!$this->init()) {
             return false;
+        }
 
-        if ($this->SendLSQData(new LSQData(array('button', 'jump_fwd'), '')))
-        {
+        if ($this->SendLSQData(new LSQData(['button', 'jump_fwd'], ''))) {
             $this->_SetPlay();
+
             return true;
         }
+
         return false;
     }
 
     /**
-     * Startet die Wiedergabe
+     * Startet die Wiedergabe.
+     *
      * @return boolean
-     * true bei erfolgreicher Ausführung und Rückmeldung
-     * @exception 
+     *                 true bei erfolgreicher Ausführung und Rückmeldung
+     * @exception
      */
     public function Play()
     {
-        if (!$this->init())
+        if (!$this->init()) {
             return false;
+        }
 
-
-        if ($this->SendLSQData(new LSQData('play', '')))
-        {
+        if ($this->SendLSQData(new LSQData('play', ''))) {
             $this->_SetPlay();
+
             return true;
         }
+
         return false;
     }
 
     /**
-     * Stoppt die Wiedergabe
+     * Stoppt die Wiedergabe.
+     *
      * @return boolean
-     * true bei erfolgreicher Ausführung und Rückmeldung
-     * @exception 
+     *                 true bei erfolgreicher Ausführung und Rückmeldung
+     * @exception
      */
     public function Stop()
     {
-        if (!$this->init())
+        if (!$this->init()) {
             return false;
+        }
 
-
-        if ($this->SendLSQData(new LSQData('stop', '')))
-        {
+        if ($this->SendLSQData(new LSQData('stop', ''))) {
             $this->_SetStop();
+
             return true;
         }
+
         return false;
     }
 
     /**
-     * Pausiert die Wiedergabe
+     * Pausiert die Wiedergabe.
+     *
      * @return boolean
-     * true bei erfolgreicher Ausführung und Rückmeldung
-     * @exception 
+     *                 true bei erfolgreicher Ausführung und Rückmeldung
+     * @exception
      */
     public function Pause()
     {
-        if (!$this->init())
+        if (!$this->init()) {
             return false;
+        }
 
-
-        if ((bool) $this->SendLSQData(new LSQData('pause', '1')))
-        {
+        if ((bool) $this->SendLSQData(new LSQData('pause', '1'))) {
             $this->_SetPause();
+
             return true;
         }
+
         return false;
     }
 
     /**
      * Setzten der Lautstärke.
      *
-     * @param int $Value 
+     * @param int $Value
+     *
      * @return boolean
-     * true bei erfolgreicher Ausführung und Rückmeldung
-     * @exception 
+     *                 true bei erfolgreicher Ausführung und Rückmeldung
+     * @exception
      */
     public function SetVolume(int $Value)
     {
-        if (!$this->init())
+        if (!$this->init()) {
             return false;
+        }
 
-
-        if (($Value < 0) or ( $Value > 100))
-            throw new Exception("Value invalid.");
-        $ret = intval($this->SendLSQData(new LSQData(array('mixer', 'volume'), $Value)));
+        if (($Value < 0) or ($Value > 100)) {
+            throw new Exception('Value invalid.');
+        }
+        $ret = intval($this->SendLSQData(new LSQData(['mixer', 'volume'], $Value)));
         $this->_NewVolume($ret);
-        return ($ret == $Value);
+
+        return $ret == $Value;
     }
 
     /**
      * Liefert die aktuelle Lautstärke von dem Device.
      *
      * @return integer
-     * @exception 
+     * @exception
      */
     public function GetVolume()
     {
-        if (!$this->init())
+        if (!$this->init()) {
             return false;
+        }
 
-
-        $ret = intval($this->SendLSQData(new LSQData(array('mixer', 'volume'), '?')));
+        $ret = intval($this->SendLSQData(new LSQData(['mixer', 'volume'], '?')));
         $this->_NewVolume($ret);
+
         return $ret;
     }
 
     /**
      * Setzt den Bass-Wert.
      *
-     * @param int $Value 
+     * @param int $Value
+     *
      * @return boolean
-     * true bei erfolgreicher Ausführung und Rückmeldung
-     * @exception 
+     *                 true bei erfolgreicher Ausführung und Rückmeldung
+     * @exception
      */
     public function SetBass(int $Value)
     {
-        if (!$this->init())
+        if (!$this->init()) {
             return false;
+        }
 
-
-        $ret = intval($this->SendLSQData(new LSQData(array('mixer', 'bass'), $Value)));
+        $ret = intval($this->SendLSQData(new LSQData(['mixer', 'bass'], $Value)));
         $this->SetValueInteger('Bass', $ret);
-        return ($ret == $Value);
+
+        return $ret == $Value;
     }
 
     /**
      * Liefert den aktuellen Bass-Wert.
      *
      * @return integer
-     * @exception 
+     * @exception
      */
     public function GetBass()
     {
-        if (!$this->init())
+        if (!$this->init()) {
             return false;
+        }
 
-        $ret = intval($this->SendLSQData(new LSQData(array('mixer', 'bass'), '?')));
+        $ret = intval($this->SendLSQData(new LSQData(['mixer', 'bass'], '?')));
         $this->SetValueInteger('Bass', $ret);
+
         return $ret;
     }
 
     /**
      * Setzt den Treble-Wert.
      *
-     * @param int $Value 
+     * @param int $Value
+     *
      * @return boolean
-     * true bei erfolgreicher Ausführung und Rückmeldung
-     * @exception 
+     *                 true bei erfolgreicher Ausführung und Rückmeldung
+     * @exception
      */
     public function SetTreble(int $Value)
     {
-        if (!$this->init())
+        if (!$this->init()) {
             return false;
+        }
 
-        $ret = intval($this->SendLSQData(new LSQData(array('mixer', 'treble'), $Value)));
+        $ret = intval($this->SendLSQData(new LSQData(['mixer', 'treble'], $Value)));
         $this->SetValueInteger('Treble', $ret);
-        return ($ret == $Value);
+
+        return $ret == $Value;
     }
 
     /**
      * Liefert den aktuellen Treble-Wert.
      *
      * @return integer
-     * @exception 
+     * @exception
      */
     public function GetTreble()
     {
-        if (!$this->init())
+        if (!$this->init()) {
             return false;
+        }
 
-        $ret = intval($this->SendLSQData(new LSQData(array('mixer', 'treble'), '?')));
+        $ret = intval($this->SendLSQData(new LSQData(['mixer', 'treble'], '?')));
         $this->SetValueInteger('Treble', $ret);
+
         return $ret;
     }
 
     /**
      * Setzt den Pitch-Wert.
      *
-     * @param int $Value 
+     * @param int $Value
+     *
      * @return boolean
-     * true bei erfolgreicher Ausführung und Rückmeldung
-     * @exception 
+     *                 true bei erfolgreicher Ausführung und Rückmeldung
+     * @exception
      */
     public function SetPitch(int $Value)
     {
-        if (!$this->init())
+        if (!$this->init()) {
             return false;
+        }
 
-        $ret = intval($this->SendLSQData(new LSQData(array('mixer', 'pitch'), $Value)));
+        $ret = intval($this->SendLSQData(new LSQData(['mixer', 'pitch'], $Value)));
         $this->SetValueInteger('Pitch', $ret);
-        return ($ret == $Value);
+
+        return $ret == $Value;
     }
 
     /**
      * Liefert den aktuellen Pitch-Wert.
      *
      * @return integer
-     * @exception 
+     * @exception
      */
     public function GetPitch()
     {
-        if (!$this->init())
+        if (!$this->init()) {
             return false;
+        }
 
-        $ret = intval($this->SendLSQData(new LSQData(array('mixer', 'pitch'), '?')));
+        $ret = intval($this->SendLSQData(new LSQData(['mixer', 'pitch'], '?')));
         $this->SetValueInteger('Pitch', $ret);
+
         return $ret;
     }
 
     /**
      * Setzten der Stummschaltung.
      *
-     * @param bool $Value 
-     * true = Stumm an
-     * false = Stumm aus
+     * @param bool $Value
+     *                    true = Stumm an
+     *                    false = Stumm aus
+     *
      * @return boolean
-     * true bei erfolgreicher Ausführung und Rückmeldung
-     * @exception 
+     *                 true bei erfolgreicher Ausführung und Rückmeldung
+     * @exception
      */
     public function SetMute(bool $Value)
     {
-        if (!$this->init())
+        if (!$this->init()) {
             return false;
+        }
 
-        if (!is_bool($Value))
-            throw new Exception("Value must boolean.");
-        $ret = (bool) $this->SendLSQData(new LSQData(array(LSQResponse::mixer, LSQResponse::muting), intval($Value)));
+        if (!is_bool($Value)) {
+            throw new Exception('Value must boolean.');
+        }
+        $ret = (bool) $this->SendLSQData(new LSQData([LSQResponse::mixer, LSQResponse::muting], intval($Value)));
         $this->SetValueBoolean('Mute', $ret);
-        return ($ret == $Value);
+
+        return $ret == $Value;
     }
 
     /**
      * Liefert den Status der Stummschaltung.
      *
      * @return boolean
-     * true = Stumm an
-     * false = Stumm aus
-     * @exception 
+     *                 true = Stumm an
+     *                 false = Stumm aus
+     * @exception
      */
     public function GetMute()
     {
-        if (!$this->init())
+        if (!$this->init()) {
             return false;
+        }
 
-        $ret = (bool) $this->SendLSQData(new LSQData(array(LSQResponse::mixer, LSQResponse::muting), '?'));
+        $ret = (bool) $this->SendLSQData(new LSQData([LSQResponse::mixer, LSQResponse::muting], '?'));
         $this->SetValueBoolean('Mute', $ret);
+
         return $ret;
     }
 
     /**
      * Setzen des Wiederholungsmodus.
      *
-     * @param int $Value 
-     * 0 = aus
-     * 1 = Titel
-     * 2 = Album
+     * @param int $Value
+     *                   0 = aus
+     *                   1 = Titel
+     *                   2 = Album
+     *
      * @return boolean
-     * true bei erfolgreicher Ausführung und Rückmeldung
-     * @exception 
+     *                 true bei erfolgreicher Ausführung und Rückmeldung
+     * @exception
      */
     public function SetRepeat(int $Value)
     {
-        if (!$this->init())
+        if (!$this->init()) {
             return false;
+        }
 
-        if (($Value < 0) or ( $Value > 2))
-            throw new Exception("Value must be 0, 1 or 2.");
-        $ret = intval($this->SendLSQData(new LSQData(array(LSQResponse::playlist, LSQResponse::repeat), intval($Value))));
+        if (($Value < 0) or ($Value > 2)) {
+            throw new Exception('Value must be 0, 1 or 2.');
+        }
+        $ret = intval($this->SendLSQData(new LSQData([LSQResponse::playlist, LSQResponse::repeat], intval($Value))));
         $this->SetValueInteger('Repeat', $ret);
-        return ($ret == $Value);
+
+        return $ret == $Value;
     }
 
     /**
      * Liefert den Wiederholungsmodus.
      *
      * @return integer
-     * 0 = aus
-     * 1 = Titel
-     * 2 = Album
-     * @exception 
+     *                 0 = aus
+     *                 1 = Titel
+     *                 2 = Album
+     * @exception
      */
     public function GetRepeat()
     {
-        if (!$this->init())
+        if (!$this->init()) {
             return false;
+        }
 
-        $ret = intval($this->SendLSQData(new LSQData(array(LSQResponse::playlist, LSQResponse::repeat), '?')));
+        $ret = intval($this->SendLSQData(new LSQData([LSQResponse::playlist, LSQResponse::repeat], '?')));
         $this->SetValueInteger('Repeat', $ret);
+
         return $ret;
     }
 
     /**
      * Setzen des Zufallsmodus.
      *
-     * @param int $Value 
-     * 0 = aus
-     * 1 = Titel
-     * 2 = Album
+     * @param int $Value
+     *                   0 = aus
+     *                   1 = Titel
+     *                   2 = Album
+     *
      * @return boolean
-     * true bei erfolgreicher Ausführung und Rückmeldung
-     * @exception 
+     *                 true bei erfolgreicher Ausführung und Rückmeldung
+     * @exception
      */
     public function SetShuffle(int $Value)
     {
-        if (!$this->init())
+        if (!$this->init()) {
             return false;
+        }
 
-        if (($Value < 0) or ( $Value > 2))
-            throw new Exception("Value must be 0, 1 or 2.");
-        $ret = intval($this->SendLSQData(new LSQData(array(LSQResponse::playlist, LSQResponse::shuffle), intval($Value))));
+        if (($Value < 0) or ($Value > 2)) {
+            throw new Exception('Value must be 0, 1 or 2.');
+        }
+        $ret = intval($this->SendLSQData(new LSQData([LSQResponse::playlist, LSQResponse::shuffle], intval($Value))));
         $this->SetValueInteger('Shuffle', $ret);
         $this->RefreshPlaylist();
-        return ($ret == $Value);
+
+        return $ret == $Value;
     }
 
     /**
      * Liefert den Zufallsmodus.
      *
      * @return integer
-     * 0 = aus
-     * 1 = Titel
-     * 2 = Album
-     * @exception 
+     *                 0 = aus
+     *                 1 = Titel
+     *                 2 = Album
+     * @exception
      */
     public function GetShuffle()
     {
-        if (!$this->init())
+        if (!$this->init()) {
             return false;
+        }
 
-        $ret = intval($this->SendLSQData(new LSQData(array(LSQResponse::playlist, LSQResponse::shuffle), '?')));
+        $ret = intval($this->SendLSQData(new LSQData([LSQResponse::playlist, LSQResponse::shuffle], '?')));
         $this->SetValueInteger('Shuffle', $ret);
+
         return $ret;
     }
 
     /**
      * Simuliert einen Tastendruck auf einen der Preset-Tasten.
      *
-     * @param int $Value 
-     * 1 - 6 = Taste 1 bis 6
+     * @param int $Value
+     *                   1 - 6 = Taste 1 bis 6
+     *
      * @return bool
-     * true bei erfolgreicher Ausführung und Rückmeldung
-     * @exception 
+     *              true bei erfolgreicher Ausführung und Rückmeldung
+     * @exception
      */
     public function SelectPreset(int $Value)
     {
-        if (!$this->init())
+        if (!$this->init()) {
             return false;
+        }
 
-        if (($Value < 1) or ( $Value > 6))
-            throw new Exception("Value invalid.");
-        return (bool) $this->SendLSQData(new LSQData(array(LSQResponse::button, 'preset_' . intval($Value) . '.single'), ''));
+        if (($Value < 1) or ($Value > 6)) {
+            throw new Exception('Value invalid.');
+        }
+        return (bool) $this->SendLSQData(new LSQData([LSQResponse::button, 'preset_'.intval($Value).'.single'], ''));
     }
 
     /**
      * Schaltet das Gerät ein oder aus.
      *
-     * @access public
-     * @param bool $Value 
-     * false  = ausschalten
-     * true = einschalten
+     * @param bool $Value
+     *                    false  = ausschalten
+     *                    true = einschalten
+     *
      * @return boolean
-     * true bei erfolgreicher Ausführung und Rückmeldung
-     * @exception 
+     *                 true bei erfolgreicher Ausführung und Rückmeldung
+     * @exception
      */
     public function Power(bool $Value)
     {
-        if (!$this->init())
+        if (!$this->init()) {
             return false;
+        }
 
-        if (!is_bool($Value))
-            throw new Exception("Value must boolean.");
+        if (!is_bool($Value)) {
+            throw new Exception('Value must boolean.');
+        }
         $ret = (bool) $this->SendLSQData(new LSQData(LSQResponse::power, intval($Value)));
-        return ($ret == $Value);
+
+        return $ret == $Value;
     }
 
     /**
      * Springt in der aktuellen Wiedergabeliste auf einen Titel.
      *
-     * @param integer $Value 
-     * Track in der Wiedergabeliste auf welchen gesprungen werden soll.
+     * @param int $Value
+     *                   Track in der Wiedergabeliste auf welchen gesprungen werden soll.
+     *
      * @return boolean
-     * true bei erfolgreicher Ausführung und Rückmeldung
-     * @exception 
+     *                 true bei erfolgreicher Ausführung und Rückmeldung
+     * @exception
      */
     public function PlayTrack(int $Index)
     {
-        if (!$this->init())
+        if (!$this->init()) {
             return false;
+        }
 
-        $ret = intval($this->SendLSQData(new LSQData(array(LSQResponse::playlist, LSQResponse::index), intval($Index) - 1))) + 1;
-        return ($ret == $Index);
+        $ret = intval($this->SendLSQData(new LSQData([LSQResponse::playlist, LSQResponse::index], intval($Index) - 1))) + 1;
+
+        return $ret == $Index;
     }
 
     /**
      * Springt in der aktuellen Wiedergabeliste auf den nächsten Titel.
      *
      * @return boolean
-     * true bei erfolgreicher Ausführung und Rückmeldung
-     * @exception 
+     *                 true bei erfolgreicher Ausführung und Rückmeldung
+     * @exception
      */
     public function NextTrack()
     {
-        if (!$this->init())
+        if (!$this->init()) {
             return false;
+        }
 
-        $ret = trim(rawurldecode($this->SendLSQData(new LSQData(array(LSQResponse::playlist, LSQResponse::index), '+1'))));
-        return ($ret == "+1");
+        $ret = trim(rawurldecode($this->SendLSQData(new LSQData([LSQResponse::playlist, LSQResponse::index], '+1'))));
+
+        return $ret == '+1';
     }
 
     /**
      * Springt in der aktuellen Wiedergabeliste auf den vorherigen Titel.
      *
      * @return boolean
-     * true bei erfolgreicher Ausführung und Rückmeldung
-     * @exception 
+     *                 true bei erfolgreicher Ausführung und Rückmeldung
+     * @exception
      */
     public function PreviousTrack()
     {
-        if (!$this->init())
+        if (!$this->init()) {
             return false;
+        }
 
-        $ret = trim(rawurldecode($this->SendLSQData(new LSQData(array(LSQResponse::playlist, LSQResponse::index), '-1'))));
-        return ($ret == "-1");
+        $ret = trim(rawurldecode($this->SendLSQData(new LSQData([LSQResponse::playlist, LSQResponse::index], '-1'))));
+
+        return $ret == '-1';
     }
 
     /**
      * Setzt eine absolute Zeit-Position des aktuellen Titels.
      *
      * @param int $Value Zeit in Sekunden.
-     * @return boolean true bei erfolgreicher Ausführung und Rückmeldung.
+     *
+     * @return bool true bei erfolgreicher Ausführung und Rückmeldung.
      * @exception Wenn Befehl nicht ausgeführt werden konnte.
      */
     public function SetPosition(int $Value)
     {
-        if (!$this->init())
+        if (!$this->init()) {
             return false;
+        }
 
-        if (!is_int($Value))
-            throw new Exception("Value must be integer.");
+        if (!is_int($Value)) {
+            throw new Exception('Value must be integer.');
+        }
         $ret = intval($this->SendLSQData(new LSQData(LSQResponse::time, $Value)));
-        return ($ret == $Value);
+
+        return $ret == $Value;
     }
 
     /**
      * Liest die aktuelle Zeit-Position des aktuellen Titels.
      *
      * @return integer
-     * Zeit in Sekunden.
-     * @exception 
+     *                 Zeit in Sekunden.
+     * @exception
      */
     public function GetPosition()
     {
-        if (!$this->init())
+        if (!$this->init()) {
             return false;
+        }
 
         $ret = intval($this->SendLSQData(new LSQData(LSQResponse::time, '?')));
+
         return $ret;
     }
 
@@ -1024,56 +1084,64 @@ if (isset($_GET["Index"]))
      * Speichert die aktuelle Wiedergabeliste vom Gerät in einer unter $Name angegebenen Wiedergabelisten-Datei auf dem LMS-Server.
      *
      * @param string $Name
-     * Der Name der Wiedergabeliste. Ist diese Liste auf dem Server schon vorhanden, wird sie überschrieben.
+     *                     Der Name der Wiedergabeliste. Ist diese Liste auf dem Server schon vorhanden, wird sie überschrieben.
+     *
      * @return boolean
-     * true bei erfolgreicher Ausführung und Rückmeldung
-     * @exception 
+     *                 true bei erfolgreicher Ausführung und Rückmeldung
+     * @exception
      */
     public function SavePlaylist(string $Name)
     {
-        if (!$this->init())
+        if (!$this->init()) {
             return false;
+        }
 
-        $raw = $this->SendLSQData(new LSQData(array(LSQResponse::playlist, 'save'), array(rawurlencode($Name), 'silent:1')));
+        $raw = $this->SendLSQData(new LSQData([LSQResponse::playlist, 'save'], [rawurlencode($Name), 'silent:1']));
         $ret = explode(' ', $raw);
-        return (rawurldecode($ret[0]) == $Name);
+
+        return rawurldecode($ret[0]) == $Name;
     }
 
     /**
      * Speichert die aktuelle Wiedergabeliste vom Gerät in einer festen Wiedergabelisten-Datei auf dem LMS-Server.
      *
      * @return boolean
-     * true bei erfolgreicher Ausführung und Rückmeldung
-     * @exception 
+     *                 true bei erfolgreicher Ausführung und Rückmeldung
+     * @exception
      */
     public function SaveTempPlaylist()
     {
-        if (!$this->init())
+        if (!$this->init()) {
             return false;
+        }
 
-        $raw = $this->SendLSQData(new LSQData(array(LSQResponse::playlist, 'save'), array((string) $this->InstanceID, 'silent:1')));
+        $raw = $this->SendLSQData(new LSQData([LSQResponse::playlist, 'save'], [(string) $this->InstanceID, 'silent:1']));
         $ret = explode(' ', $raw);
-        return (rawurldecode($ret[0]) == (string) $this->InstanceID);
+
+        return rawurldecode($ret[0]) == (string) $this->InstanceID;
     }
 
     /**
      * Lädt eine Wiedergabelisten-Datei aus dem LMS-Server und startet die Wiedergabe derselben auf dem Gerät.
      *
      * @param string $Name
-     * Der Name der Wiedergabeliste.
+     *                     Der Name der Wiedergabeliste.
+     *
      * @return string
-     * Kompletter Pfad der Wiedergabeliste.
-     * @exception 
+     *                Kompletter Pfad der Wiedergabeliste.
+     * @exception
      */
     public function LoadPlaylist(string $Name)
     {
-        if (!$this->init())
+        if (!$this->init()) {
             return false;
+        }
 
-        $raw = $this->SendLSQData(new LSQData(array(LSQResponse::playlist, 'load'), array(rawurlencode($Name), 'noplay:1')));
+        $raw = $this->SendLSQData(new LSQData([LSQResponse::playlist, 'load'], [rawurlencode($Name), 'noplay:1']));
         $ret = rawurldecode(explode(' ', $raw)[0]);
-        if (($ret == '/' . $Name) or ( $ret == '\\' . $Name))
-            throw new Exception("Playlist not found.");
+        if (($ret == '/'.$Name) or ($ret == '\\'.$Name)) {
+            throw new Exception('Playlist not found.');
+        }
         return rawurldecode($ret);
     }
 
@@ -1081,20 +1149,23 @@ if (isset($_GET["Index"]))
      * Lädt eine Wiedergabelisten-Datei aus dem LMS-Server und spring an die zuletzt abgespielten Track.
      *
      * @param string $Name
-     * Der Name der Wiedergabeliste.
+     *                     Der Name der Wiedergabeliste.
+     *
      * @return string
-     * Kompletter Pfad der Wiedergabeliste.
-     * @exception 
+     *                Kompletter Pfad der Wiedergabeliste.
+     * @exception
      */
     public function ResumePlaylist(string $Name)
     {
-        if (!$this->init())
+        if (!$this->init()) {
             return false;
+        }
 
-        $raw = $this->SendLSQData(new LSQData(array(LSQResponse::playlist, 'resume'), array(rawurlencode($Name), 'noplay:1')));
+        $raw = $this->SendLSQData(new LSQData([LSQResponse::playlist, 'resume'], [rawurlencode($Name), 'noplay:1']));
         $ret = rawurldecode(explode(' ', $raw)[0]);
-        if (($ret == '/' . $Name) or ( $ret == '\\' . $Name))
-            throw new Exception("Playlist not found.");
+        if (($ret == '/'.$Name) or ($ret == '\\'.$Name)) {
+            throw new Exception('Playlist not found.');
+        }
         return rawurldecode($ret);
     }
 
@@ -1102,138 +1173,156 @@ if (isset($_GET["Index"]))
      * Lädt eine zuvor gespeicherte Wiedergabelisten-Datei und setzt die Wiedergabe fort.
      *
      * @return boolean
-     * true bei erfolgreicher Ausführung und Rückmeldung
-     * @exception 
+     *                 true bei erfolgreicher Ausführung und Rückmeldung
+     * @exception
      */
     public function LoadTempPlaylist()
     {
-        if (!$this->init())
+        if (!$this->init()) {
             return false;
+        }
 
-        $raw = $this->SendLSQData(new LSQData(array(LSQResponse::playlist, 'resume'), array((string) $this->InstanceID, 'wipePlaylist:1', 'noplay:1')));
+        $raw = $this->SendLSQData(new LSQData([LSQResponse::playlist, 'resume'], [(string) $this->InstanceID, 'wipePlaylist:1', 'noplay:1']));
         $ret = explode(' ', $raw);
-        return (rawurldecode($ret[0]) == (string) $this->InstanceID);
+
+        return rawurldecode($ret[0]) == (string) $this->InstanceID;
     }
 
     public function LoadPlaylistByAlbumID(int $AlbumID)
     {
-        if (!$this->init())
+        if (!$this->init()) {
             return false;
+        }
 
-        if (!is_int($AlbumID))
-            throw new Exception("AlbumID must be integer.");
-
-        $raw = $this->SendLSQData(new LSQData(LSQResponse::playlistcontrol, array('cmd:load', 'album_id:' . $AlbumID)));
+        if (!is_int($AlbumID)) {
+            throw new Exception('AlbumID must be integer.');
+        }
+        $raw = $this->SendLSQData(new LSQData(LSQResponse::playlistcontrol, ['cmd:load', 'album_id:'.$AlbumID]));
         $Data = new LMSTaggingData($raw);
-        if (property_exists($Data, 'count'))
-        {
+        if (property_exists($Data, 'count')) {
             $this->SetValueInteger('Tracks', (int) $Data->count);
+
             return true;
         }
-        throw new Exception("AlbumID not found.");
+
+        throw new Exception('AlbumID not found.');
     }
 
     public function LoadPlaylistByGenreID(int $GenreID)
     {
-        if (!$this->init())
+        if (!$this->init()) {
             return false;
+        }
 
-        if (!is_int($GenreID))
-            throw new Exception("GenreID must be integer.");
-        $raw = $this->SendLSQData(new LSQData(LSQResponse::playlistcontrol, array('cmd:load', 'genre_id:' . $GenreID)));
+        if (!is_int($GenreID)) {
+            throw new Exception('GenreID must be integer.');
+        }
+        $raw = $this->SendLSQData(new LSQData(LSQResponse::playlistcontrol, ['cmd:load', 'genre_id:'.$GenreID]));
         $Data = new LMSTaggingData($raw);
-        if (property_exists($Data, 'count'))
-        {
+        if (property_exists($Data, 'count')) {
             $this->SetValueInteger('Tracks', (int) $Data->count);
+
             return true;
         }
-        throw new Exception("GenreID not found.");
+
+        throw new Exception('GenreID not found.');
     }
 
     public function LoadPlaylistByArtistID(int $ArtistID)
     {
-        if (!$this->init())
+        if (!$this->init()) {
             return false;
+        }
 
-        if (!is_int($ArtistID))
-            throw new Exception("ArtistID must be integer.");
-
-        $raw = $this->SendLSQData(new LSQData(LSQResponse::playlistcontrol, array('cmd:load', 'artist_id:' . $ArtistID)));
+        if (!is_int($ArtistID)) {
+            throw new Exception('ArtistID must be integer.');
+        }
+        $raw = $this->SendLSQData(new LSQData(LSQResponse::playlistcontrol, ['cmd:load', 'artist_id:'.$ArtistID]));
         $Data = new LMSTaggingData($raw);
-        if (property_exists($Data, 'count'))
-        {
+        if (property_exists($Data, 'count')) {
             $this->SetValueInteger('Tracks', (int) $Data->count);
+
             return true;
         }
-        throw new Exception("ArtistID not found.");
+
+        throw new Exception('ArtistID not found.');
     }
 
     public function LoadPlaylistByPlaylistID(int $PlaylistID)
     {
-        if (!$this->init())
+        if (!$this->init()) {
             return false;
+        }
 
-        if (!is_int($PlaylistID))
-            throw new Exception("PlaylistID must be integer.");
-
-        $raw = $this->SendLSQData(new LSQData(LSQResponse::playlistcontrol, array('cmd:load', 'playlist_id:' . $PlaylistID)));
+        if (!is_int($PlaylistID)) {
+            throw new Exception('PlaylistID must be integer.');
+        }
+        $raw = $this->SendLSQData(new LSQData(LSQResponse::playlistcontrol, ['cmd:load', 'playlist_id:'.$PlaylistID]));
         $Data = new LMSTaggingData($raw);
-        if (property_exists($Data, 'count'))
-        {
+        if (property_exists($Data, 'count')) {
             $this->SetValueInteger('Tracks', (int) $Data->count);
+
             return true;
         }
-        throw new Exception("PlaylistID not found.");
+
+        throw new Exception('PlaylistID not found.');
     }
 
     public function GetPlaylistInfo()
     {
-        if (!$this->init())
+        if (!$this->init()) {
             return false;
+        }
 
-        $raw = $this->SendLSQData(new LSQData(array(LSQResponse::playlist, 'playlistsinfo'), ''));
-        if ($raw === true)
+        $raw = $this->SendLSQData(new LSQData([LSQResponse::playlist, 'playlistsinfo'], ''));
+        if ($raw === true) {
             return false;
+        }
         $SongInfo = new LSMSongInfo($raw);
+
         return $SongInfo->GetSong();
     }
 
     /**
      * Liefert Informationen über einen Song aus der aktuelle Wiedergabeliste.
      *
-     * @param integer $Index
-     * $Index für die absolute Position des Titels in der Wiedergabeliste.
-     * 0 für den aktuellen Titel
-     *  
+     * @param int $Index
+     *                   $Index für die absolute Position des Titels in der Wiedergabeliste.
+     *                   0 für den aktuellen Titel
+     *
      * @return array
-     *  ["duration"]=>string
-     *  ["id"]=>string
-     *  ["title"]=>string
-     *  ["genre"]=>string
-     *  ["album"]=>string
-     *  ["artist"]=>string
-     *  ["disc"]=> string
-     *  ["disccount"]=>string
-     *  ["bitrate"]=>string
-     *  ["tracknum"]=>string
-     * @exception 
+     *               ["duration"]=>string
+     *               ["id"]=>string
+     *               ["title"]=>string
+     *               ["genre"]=>string
+     *               ["album"]=>string
+     *               ["artist"]=>string
+     *               ["disc"]=> string
+     *               ["disccount"]=>string
+     *               ["bitrate"]=>string
+     *               ["tracknum"]=>string
+     * @exception
      */
     public function GetSongInfoByTrackIndex(int $Index)
     {
-        if (!$this->init())
+        if (!$this->init()) {
             return false;
+        }
 
-        if (is_int($Index))
+        if (is_int($Index)) {
             $Index--;
-        else
-            throw new Exception("Index must be integer.");
-        if ($Index == -1)
+        } else {
+            throw new Exception('Index must be integer.');
+        }
+        if ($Index == -1) {
             $Index = '-';
-        $Data = $this->SendLSQData(new LSQData(array('status', (string) $Index, '1'), 'tags:gladiqrRtueJINpsy'));
+        }
+        $Data = $this->SendLSQData(new LSQData(['status', (string) $Index, '1'], 'tags:gladiqrRtueJINpsy'));
         $SongInfo = new LSMSongInfo($Data);
         $SongArray = $SongInfo->GetSong();
-        if (count($SongArray) == 1)
-            throw new Exception("Index not valid.");
+        if (count($SongArray) == 1) {
+            throw new Exception('Index not valid.');
+        }
         return $SongArray;
     }
 
@@ -1241,36 +1330,34 @@ if (isset($_GET["Index"]))
      * Liefert Informationen über alle Songs aus der aktuelle Wiedergabeliste.
      *
      * @return array[index]
-     *      ["duration"]=>string
-     *      ["id"]=>string
-     *      ["title"]=>string
-     *      ["genre"]=>string
-     *      ["album"]=>string
-     *      ["artist"]=>string
-     *      ["disc"]=> string
-     *      ["disccount"]=>string
-     *      ["bitrate"]=>string
-     *      ["tracknum"]=>string
-     * @exception 
+     *                      ["duration"]=>string
+     *                      ["id"]=>string
+     *                      ["title"]=>string
+     *                      ["genre"]=>string
+     *                      ["album"]=>string
+     *                      ["artist"]=>string
+     *                      ["disc"]=> string
+     *                      ["disccount"]=>string
+     *                      ["bitrate"]=>string
+     *                      ["tracknum"]=>string
+     * @exception
      */
     public function GetSongInfoOfCurrentPlaylist()
     {
         $max = GetValueInteger($this->GetIDForIdent('Tracks'));
-        $Data = $this->SendLSQData(new LSQData(array('status', '0', (string) $max), 'tags:gladiqrRtueJINpsy'));
+        $Data = $this->SendLSQData(new LSQData(['status', '0', (string) $max], 'tags:gladiqrRtueJINpsy'));
         $SongInfo = new LSMSongInfo($Data);
+
         return $SongInfo->GetAllSongs();
     }
 
-################## ActionHandler
+    //################# ActionHandler
 
     public function RequestAction($Ident, $Value)
     {
-
-        switch ($Ident)
-        {
-            case "Status":
-                switch ($Value)
-                {
+        switch ($Ident) {
+            case 'Status':
+                switch ($Value) {
                     case 0: //Prev
                         //$this->PreviousButton();
                         $result = $this->PreviousTrack();
@@ -1290,61 +1377,58 @@ if (isset($_GET["Index"]))
                         break;
                 }
                 break;
-            case "Volume":
+            case 'Volume':
                 $result = $this->SetVolume($Value);
                 break;
-            case "Bass":
+            case 'Bass':
                 $result = $this->SetBass($Value);
                 break;
-            case "Treble":
+            case 'Treble':
                 $result = $this->SetTreble($Value);
                 break;
-            case "Pitch":
+            case 'Pitch':
                 $result = $this->SetPitch($Value);
                 break;
-            case "Preset":
+            case 'Preset':
                 $result = $this->SelectPreset($Value);
                 break;
-            case "Power":
+            case 'Power':
                 $result = $this->Power($Value);
                 break;
-            case "Mute":
+            case 'Mute':
                 $result = $this->SetMute($Value);
                 break;
-            case "Repeat":
+            case 'Repeat':
                 $result = $this->SetRepeat($Value);
                 break;
-            case "Shuffle":
+            case 'Shuffle':
                 $result = $this->SetShuffle($Value);
                 break;
-            case "Position2":
+            case 'Position2':
                 $this->tempData['Duration'] = GetValueInteger($this->GetIDForIdent('DurationRAW'));
 //                $this->tempData['Position'] = GetValueInteger($this->GetIDForIdent('PositionRAW'));
                 $Time = ($this->tempData['Duration'] / 100) * $Value;
                 $result = $this->SetPosition(intval($Time));
                 break;
-            case "Index":
+            case 'Index':
                 $result = $this->PlayTrack($Value);
                 break;
-            case "SleepTimer":
+            case 'SleepTimer':
                 $result = $this->SetSleep($Value);
                 break;
             default:
-                throw new Exception("Invalid ident");
+                throw new Exception('Invalid ident');
         }
-        if ($result == false)
-        {
-            trigger_error("Error on RequestAction", E_USER_NOTICE);
+        if ($result == false) {
+            trigger_error('Error on RequestAction', E_USER_NOTICE);
         }
     }
 
-################## PRIVATE
+    //################# PRIVATE
 
     private function _NewName($Name)
     {
-
-        if (IPS_GetName($this->InstanceID) <> trim($Name))
-        {
+        if (IPS_GetName($this->InstanceID) != trim($Name)) {
             IPS_SetName($this->InstanceID, trim($Name));
         }
     }
@@ -1352,32 +1436,32 @@ if (isset($_GET["Index"]))
     private function _SetPlay()
     {
         $this->SetValueBoolean('Power', true);
-        if ($this->SetValueInteger('Status', 2))
-            $this->SendLSQData(new LSQData(array('status', '-', '1',), 'subscribe:' . $this->ReadPropertyInteger('Interval'), false));
+        if ($this->SetValueInteger('Status', 2)) {
+            $this->SendLSQData(new LSQData(['status', '-', '1'], 'subscribe:'.$this->ReadPropertyInteger('Interval'), false));
+        }
     }
 
     private function _SetStop()
     {
-        if ($this->SetValueInteger('Status', 1))
-            $this->SendLSQData(new LSQData(array('status', '-', '1',), 'subscribe:0', false));
+        if ($this->SetValueInteger('Status', 1)) {
+            $this->SendLSQData(new LSQData(['status', '-', '1'], 'subscribe:0', false));
+        }
     }
 
     private function _SetPause()
     {
-        if ($this->SetValueInteger('Status', 3))
-            $this->SendLSQData(new LSQData(array('status', '-', '1',), 'subscribe:0', false));
+        if ($this->SetValueInteger('Status', 3)) {
+            $this->SendLSQData(new LSQData(['status', '-', '1'], 'subscribe:0', false));
+        }
     }
 
     private function _NewVolume($Value)
     {
         $Value = (int) ($Value);
-        if ($Value < 0)
-        {
+        if ($Value < 0) {
             $Value = $Value - (2 * $Value);
             $this->SetValueBoolean('Mute', true);
-        }
-        else
-        {
+        } else {
             $this->SetValueBoolean('Mute', false);
         }
         $this->SetValueInteger('Volume', $Value);
@@ -1386,32 +1470,30 @@ if (isset($_GET["Index"]))
     private function _SetSeekable($Value)
     {
         $this->SetValueBoolean('can_seek', (bool) $Value);
-        if ((bool) $Value)
-            $this->EnableAction("Position2");
-        else
+        if ((bool) $Value) {
+            $this->EnableAction('Position2');
+        } else {
             $this->DisableAction('Position2');
+        }
     }
 
     private function _SetSleep($Value)
     {
         $this->SetValueInteger('SleepTimer', $Value);
-        if ($Value == 0)
+        if ($Value == 0) {
             $this->SetValueString('SleepTimeout', '');
+        }
     }
 
     private function decodeLSQEvent($LSQEvent)
     {
-        if (is_array($LSQEvent->Command))
-        {
+        if (is_array($LSQEvent->Command)) {
             $MainCommand = array_shift($LSQEvent->Command);
-        }
-        else
-        {
+        } else {
             $MainCommand = $LSQEvent->Command;
         }
 
-        switch ($MainCommand)
-        {
+        switch ($MainCommand) {
             /*            case LSQResponse::player_connected:
               if (GetValueBoolean($this->GetIDForIdent('Connected')) <> (bool) $LSQEvent->Value)
               {
@@ -1420,21 +1502,22 @@ if (isset($_GET["Index"]))
 
               break; */
             case LSQResponse::connected:
-                if (!$LSQEvent->isResponse) //wenn Response, dann macht der Anfrager das selbst
-                {
-                    if ($LSQEvent->Value == 1)
+                if (!$LSQEvent->isResponse) { //wenn Response, dann macht der Anfrager das selbst
+                    if ($LSQEvent->Value == 1) {
                         $this->SetConnected(true);
-                    else
+                    } else {
                         $this->SetConnected(false);
+                    }
                 }
                 break;
             case LSQResponse::client:  // Nur Event
-//                if (!$LSQEvent->isResponse) //wenn Response, dann macht der Anfrager das selbst                
+//                if (!$LSQEvent->isResponse) //wenn Response, dann macht der Anfrager das selbst
 //                {
-                if ($LSQEvent->Value == 'disconnect')
+                if ($LSQEvent->Value == 'disconnect') {
                     $this->SetConnected(false);
-                elseif (($LSQEvent->Value == 'new') or ( $LSQEvent->Value == 'reconnect'))
+                } elseif (($LSQEvent->Value == 'new') or ($LSQEvent->Value == 'reconnect')) {
                     $this->SetConnected(true);
+                }
 //                }
                 break;
             case LSQResponse::player_name:
@@ -1449,8 +1532,7 @@ if (isset($_GET["Index"]))
                 break;
             case LSQResponse::power:
                 $this->SetValueBoolean('Power', (bool) $LSQEvent->Value);
-                if ((bool) $LSQEvent->Value == false)
-                {
+                if ((bool) $LSQEvent->Value == false) {
                     $this->_SetStop();
                     $this->_SetSleep(0);
                 }
@@ -1463,34 +1545,31 @@ if (isset($_GET["Index"]))
                 $this->_SetStop();
                 break;
             case LSQResponse::pause:
-                if ($LSQEvent->Value == '')
-                {
+                if ($LSQEvent->Value == '') {
                     $this->_SetPause();
-                }
-                elseif ((bool) $LSQEvent->Value)
-                {
+                } elseif ((bool) $LSQEvent->Value) {
                     $this->_SetPause();
-                }
-                else
-                {
+                } else {
                     $this->_SetPlay();
                 }
                 break;
 
             case LSQResponse::mode:
-                if (is_array($LSQEvent->Command))
+                if (is_array($LSQEvent->Command)) {
                     $this->decodeLSQEvent(new LSQEvent($LSQEvent->Command[0], $LSQEvent->Value, $LSQEvent->isResponse));
-                else
+                } else {
                     $this->decodeLSQEvent(new LSQEvent($LSQEvent->Value, '', $LSQEvent->isResponse));
+                }
                 break;
             case LSQResponse::mixer:
                 $this->decodeLSQEvent(new LSQEvent($LSQEvent->Command[0], $LSQEvent->Value, $LSQEvent->isResponse));
                 break;
             case LSQResponse::volume:
-                if (is_array($LSQEvent->Value))
+                if (is_array($LSQEvent->Value)) {
                     $this->_NewVolume((int) $LSQEvent->Value[0]);
-                else
+                } else {
                     $this->_NewVolume((int) $LSQEvent->Value);
+                }
                 break;
             case LSQResponse::treble:
                 $this->SetValueInteger('Treble', (int) ($LSQEvent->Value));
@@ -1508,8 +1587,7 @@ if (isset($_GET["Index"]))
                 $this->SetValueInteger('Repeat', (int) ($LSQEvent->Value));
                 break;
             case LSQResponse::shuffle:
-                if ($this->SetValueInteger('Shuffle', (int) ($LSQEvent->Value)))
-                {
+                if ($this->SetValueInteger('Shuffle', (int) ($LSQEvent->Value))) {
                     $this->RefreshPlaylist();
                 }
                 break;
@@ -1517,10 +1595,11 @@ if (isset($_GET["Index"]))
                 $this->_SetSleep((int) $LSQEvent->Value);
                 break;
             case LSQResponse::will_sleep_in:
-                if ((int) $LSQEvent->Value > 3600)
-                    $this->SetValueString('SleepTimeout', @date("H:i:s", (int) $LSQEvent->Value - 3600));
-                else
-                    $this->SetValueString('SleepTimeout', @date("i:s", (int) $LSQEvent->Value));
+                if ((int) $LSQEvent->Value > 3600) {
+                    $this->SetValueString('SleepTimeout', @date('H:i:s', (int) $LSQEvent->Value - 3600));
+                } else {
+                    $this->SetValueString('SleepTimeout', @date('i:s', (int) $LSQEvent->Value));
+                }
                 break;
             case LSQResponse::sync:
             case LSQResponse::rate:
@@ -1541,13 +1620,10 @@ if (isset($_GET["Index"]))
                 //ignore
                 break;
             case LSQResponse::newsong:
-                if (is_array($LSQEvent->Value))
-                {
+                if (is_array($LSQEvent->Value)) {
                     $title = $LSQEvent->Value[0];
                     $currentTrack = intval($LSQEvent->Value[1]) + 1;
-                }
-                else
-                {
+                } else {
                     $title = $LSQEvent->Value;
                     $currentTrack = 1;
                 }
@@ -1556,7 +1632,7 @@ if (isset($_GET["Index"]))
                 //  $this->SendLSQData(new LSQData(LSQResponse::artist, '?', false));
                 //  $this->SendLSQData(new LSQData(LSQResponse::album, '?', false));
                 $this->SendLSQData(new LSQData(LSQResponse::genre, '?', false));
-                $this->SendLSQData(new LSQData(array(LSQResponse::playlist, LSQResponse::name), '?', false));
+                $this->SendLSQData(new LSQData([LSQResponse::playlist, LSQResponse::name], '?', false));
                 //  $this->SendLSQData(new LSQData(LSQResponse::duration, '?', false));
                 //  $this->SendLSQData(new LSQData(array(LSQResponse::playlist, LSQResponse::tracks), '?', false));
                 $this->SetCover();
@@ -1568,12 +1644,12 @@ if (isset($_GET["Index"]))
                 break;
             case LSQResponse::playlist:
                 if (!($LSQEvent->Command[0] == LSQResponse::stop)  //Playlist stop kommt auch bei fwd ?
-                        and ! ($LSQEvent->Command[0] == LSQResponse::mode))
-                {
-                    if ($LSQEvent->Command[0] == LSQResponse::name)
+                        and !($LSQEvent->Command[0] == LSQResponse::mode)) {
+                    if ($LSQEvent->Command[0] == LSQResponse::name) {
                         $this->decodeLSQEvent(new LSQEvent(LSQResponse::playlist_name, $LSQEvent->Value, $LSQEvent->isResponse));
-                    else
+                    } else {
                         $this->decodeLSQEvent(new LSQEvent($LSQEvent->Command[0], $LSQEvent->Value, $LSQEvent->isResponse));
+                    }
                 }
                 break;
             case LSQResponse::loadtracks:
@@ -1585,8 +1661,7 @@ if (isset($_GET["Index"]))
 
                 break;
             case LSQResponse::prefset:
-                if ($LSQEvent->Command[0] == 'server')
-                {
+                if ($LSQEvent->Command[0] == 'server') {
                     $this->decodeLSQEvent(new LSQEvent($LSQEvent->Command[1], $LSQEvent->Value, $LSQEvent->isResponse));
                 }
                 /*                else
@@ -1603,12 +1678,9 @@ if (isset($_GET["Index"]))
             case LSQResponse::current_title:
             case LSQResponse::album:
 
-                if (is_array($LSQEvent->Value))
-                {
+                if (is_array($LSQEvent->Value)) {
                     $this->SetValueString('Album', trim(rawurldecode($LSQEvent->Value[0])));
-                }
-                else
-                {
+                } else {
                     $this->SetValueString('Album', trim(rawurldecode($LSQEvent->Value)));
                 }
                 break;
@@ -1616,20 +1688,18 @@ if (isset($_GET["Index"]))
                 $this->SetValueString('Genre', trim(rawurldecode($LSQEvent->Value)));
                 break;
             case LSQResponse::duration:
-                if ($LSQEvent->Value == 0)
-                {
+                if ($LSQEvent->Value == 0) {
                     $this->SetValueString('Duration', '');
                     $this->SetValueInteger('DurationRAW', 0);
                     $this->SetValueInteger('Position2', 0);
-                }
-                else
-                {
+                } else {
                     $this->tempData['Duration'] = $LSQEvent->Value;
                     $this->SetValueInteger('DurationRAW', $LSQEvent->Value);
-                    if ((int) $LSQEvent->Value > 3600)
-                        $this->SetValueString('Duration', @date("H:i:s", (int) $LSQEvent->Value - 3600));
-                    else
-                        $this->SetValueString('Duration', @date("i:s", (int) $LSQEvent->Value));
+                    if ((int) $LSQEvent->Value > 3600) {
+                        $this->SetValueString('Duration', @date('H:i:s', (int) $LSQEvent->Value - 3600));
+                    } else {
+                        $this->SetValueString('Duration', @date('i:s', (int) $LSQEvent->Value));
+                    }
                 }
                 break;
             case LSQResponse::playlist_name:
@@ -1639,9 +1709,8 @@ if (isset($_GET["Index"]))
             case LSQResponse::playlist_tracks:
             case LSQResponse::tracks:
                 $this->SetValueInteger('Tracks', $LSQEvent->Value);
-                $Name = "Tracklist.Squeezebox." . $this->InstanceID;
-                if ($LSQEvent->Value == 0)
-                { // alles leeren
+                $Name = 'Tracklist.Squeezebox.'.$this->InstanceID;
+                if ($LSQEvent->Value == 0) { // alles leeren
                     $this->SetValueString('Title', '');
                     $this->SetValueString('Interpret', '');
                     $this->SetValueString('Album', '');
@@ -1651,35 +1720,32 @@ if (isset($_GET["Index"]))
                     $this->SetValueInteger('Position2', 0);
                     $this->SetValueInteger('PositionRAW', 0);
                     $this->SetValueString('Position', '0:00');
-                    if ($this->SetValueInteger('Index', 0))
+                    if ($this->SetValueInteger('Index', 0)) {
                         $this->RefreshPlaylist();
+                    }
                     $this->SetCover();
-//                $LSQEvent->Value                    
+//                $LSQEvent->Value
                 }
-                if (!IPS_VariableProfileExists($Name))
-                {
+                if (!IPS_VariableProfileExists($Name)) {
                     IPS_CreateVariableProfile($Name, 1);
                     IPS_SetVariableProfileValues($Name, 1, $LSQEvent->Value, 1);
-                }
-                else
-                {
-                    if (IPS_GetVariableProfile($Name)['MaxValue'] <> $LSQEvent->Value)
+                } else {
+                    if (IPS_GetVariableProfile($Name)['MaxValue'] != $LSQEvent->Value) {
                         IPS_SetVariableProfileValues($Name, 1, $LSQEvent->Value, 1);
+                    }
                 }
 
                 break;
             case LSQResponse::status:
                 array_shift($LSQEvent->Value);
-                if ($LSQEvent->Command[0] == '-')// and ( $LSQEvent->Command[1] == '1') and ( strpos($Event, "subscribe%3A") > 0))
-                {
-
+                if ($LSQEvent->Command[0] == '-') {// and ( $LSQEvent->Command[1] == '1') and ( strpos($Event, "subscribe%3A") > 0))
                     $remote = false;
-                    foreach ($LSQEvent->Value as $Data)
-                    {
+                    foreach ($LSQEvent->Value as $Data) {
 //                        $LSQPart = $this->decodeLSQTaggingData($Data, $LSQEvent->isResponse);
                         $LSQPart = new LSQTaggingData($Data, $LSQEvent->isResponse);
-                        if ($LSQPart->Command == LSQResponse::remote)
+                        if ($LSQPart->Command == LSQResponse::remote) {
                             $remote = ($LSQPart->Value == 1);
+                        }
 //                        if (($LSQPart->Command == LSQResponse::title) and $remote) continue;
 //                        if (($LSQPart->Command == LSQResponse::current_title) and $remote) continue;
                         $this->decodeLSQEvent($LSQPart);
@@ -1687,29 +1753,29 @@ if (isset($_GET["Index"]))
                 }
                 break;
             case LSQResponse::can_seek:
-                if (GetValueBoolean($this->GetIDForIdent('can_seek')) <> (bool) $LSQEvent->Value)
-                {
+                if (GetValueBoolean($this->GetIDForIdent('can_seek')) != (bool) $LSQEvent->Value) {
                     $this->_SetSeekable((bool) $LSQEvent->Value);
                 }
                 break;
             case LSQResponse::remote:
-                if (GetValueBoolean($this->GetIDForIdent('can_seek')) == (bool) $LSQEvent->Value)
-                {
+                if (GetValueBoolean($this->GetIDForIdent('can_seek')) == (bool) $LSQEvent->Value) {
                     $this->_SetSeekable(!(bool) $LSQEvent->Value);
                 }
                 break;
             case LSQResponse::index:
             case LSQResponse::playlist_cur_index:
-                if ($this->SetValueInteger('Index', intval($LSQEvent->Value) + 1))
+                if ($this->SetValueInteger('Index', intval($LSQEvent->Value) + 1)) {
                     $this->RefreshPlaylist();
+                }
                 break;
             case LSQResponse::time:
                 $this->tempData['Position'] = $LSQEvent->Value;
                 $this->SetValueInteger('PositionRAW', $LSQEvent->Value);
-                if ((int) $LSQEvent->Value > 3600)
-                    $this->SetValueString('Position', @date("H:i:s", (int) $LSQEvent->Value - 3600));
-                else
-                    $this->SetValueString('Position', @date("i:s", (int) $LSQEvent->Value));
+                if ((int) $LSQEvent->Value > 3600) {
+                    $this->SetValueString('Position', @date('H:i:s', (int) $LSQEvent->Value - 3600));
+                } else {
+                    $this->SetValueString('Position', @date('i:s', (int) $LSQEvent->Value));
+                }
 
                 break;
             /*            default:
@@ -1719,8 +1785,7 @@ if (isset($_GET["Index"]))
               IPS_LogMessage('ToDoLSQEvent', 'LSQResponse-' . $MainCommand . '-' . $LSQEvent->Value);
               break; */
         }
-        if (isset($this->tempData['Duration']) and isset($this->tempData['Position']))
-        {
+        if (isset($this->tempData['Duration']) and isset($this->tempData['Position'])) {
             $Value = (100 / $this->tempData['Duration']) * $this->tempData['Position'];
             $this->SetValueInteger('Position2', intval(round($Value)));
         }
@@ -1729,55 +1794,50 @@ if (isset($_GET["Index"]))
     private function RefreshPlaylist()
     {
         $ScriptID = $this->ReadPropertyInteger('Playlistconfig');
-        if ($ScriptID == 0)
+        if ($ScriptID == 0) {
             return;
-        IPS_RunScriptEx($ScriptID, array('SENDER' => 'SqueezeBox', 'TARGET' => $this->InstanceID));
+        }
+        IPS_RunScriptEx($ScriptID, ['SENDER' => 'SqueezeBox', 'TARGET' => $this->InstanceID]);
     }
 
     public function DisplayPlaylist($Config)
     {
-        if (($Config === false) or ( !is_array($Config)))
+        if (($Config === false) or (!is_array($Config))) {
             throw new Exception('Error on read Playlistconfig-Script');
-
-        try
-        {
-            $Data = $this->GetSongInfoOfCurrentPlaylist();
         }
-        catch (Exception $exc)
-        {
+        try {
+            $Data = $this->GetSongInfoOfCurrentPlaylist();
+        } catch (Exception $exc) {
             throw new Exception('Error on read Playlist');
         }
         $HTMLData = $this->GetTableHeader($Config);
         $pos = 0;
         $CurrentTrack = GetValueInteger($this->GetIDForIdent('Index'));
 
-        if (isset($Data))
-        {
-            foreach ($Data as $Position => $Line)
-            {
+        if (isset($Data)) {
+            foreach ($Data as $Position => $Line) {
                 $Line['Position'] = $Position;
-                if (array_key_exists('Duration', $Line))
-                {
-                    if ($Line['Duration'] > 3600)
-                        $Line['Duration'] = @date("H:i:s", $Line['Duration'] - 3600);
-                    else
-                        $Line['Duration'] = @date("i:s", $Line['Duration']);
-                } else
-                {
+                if (array_key_exists('Duration', $Line)) {
+                    if ($Line['Duration'] > 3600) {
+                        $Line['Duration'] = @date('H:i:s', $Line['Duration'] - 3600);
+                    } else {
+                        $Line['Duration'] = @date('i:s', $Line['Duration']);
+                    }
+                } else {
                     $Line['Duration'] = '---';
                 }
-              
+
                 $Line['Play'] = $Line['Position'] == $CurrentTrack ? '<div class="iconMediumSpinner ipsIconArrowRight" style="width: 100%; background-position: center center;"></div>' : '';
 
-                $HTMLData .='<tr style="' . $Config['Style']['BR' . ($Line['Position'] == $CurrentTrack ? 'A' : ($pos % 2 ? 'U' : 'G'))] . '"
-                        onclick="window.xhrGet=function xhrGet(o) {var HTTP = new XMLHttpRequest();HTTP.open(\'GET\',o.url,true);HTTP.send();};window.xhrGet({ url: \'hook/SqueezeBoxPlaylist' . $this->InstanceID . '?Index=' . $Line['Position'] . '\' })">';
-                foreach ($Config['Spalten'] as $feldIndex => $value)
-                {
-                    if (!array_key_exists($feldIndex, $Line))
+                $HTMLData .= '<tr style="'.$Config['Style']['BR'.($Line['Position'] == $CurrentTrack ? 'A' : ($pos % 2 ? 'U' : 'G'))].'"
+                        onclick="window.xhrGet=function xhrGet(o) {var HTTP = new XMLHttpRequest();HTTP.open(\'GET\',o.url,true);HTTP.send();};window.xhrGet({ url: \'hook/SqueezeBoxPlaylist'.$this->InstanceID.'?Index='.$Line['Position'].'\' })">';
+                foreach ($Config['Spalten'] as $feldIndex => $value) {
+                    if (!array_key_exists($feldIndex, $Line)) {
                         $Line[$feldIndex] = '';
-                    $HTMLData .= '<td style="' . $Config['Style']['DF' . ($Line['Position'] == $CurrentTrack ? 'A' : ($pos % 2 ? 'U' : 'G')) . $feldIndex] . '">' . (string) $Line[$feldIndex] . '</td>';
+                    }
+                    $HTMLData .= '<td style="'.$Config['Style']['DF'.($Line['Position'] == $CurrentTrack ? 'A' : ($pos % 2 ? 'U' : 'G')).$feldIndex].'">'.(string) $Line[$feldIndex].'</td>';
                 }
-                $HTMLData .= '</tr>' . PHP_EOL;
+                $HTMLData .= '</tr>'.PHP_EOL;
                 $pos++;
             }
         }
@@ -1787,26 +1847,23 @@ if (isset($_GET["Index"]))
 
     private function RegisterHook($WebHook, $TargetID)
     {
-        $ids = IPS_GetInstanceListByModuleID("{015A6EB8-D6E5-4B93-B496-0D3F77AE9FE1}");
-        if (sizeof($ids) > 0)
-        {
-            $hooks = json_decode(IPS_GetProperty($ids[0], "Hooks"), true);
+        $ids = IPS_GetInstanceListByModuleID('{015A6EB8-D6E5-4B93-B496-0D3F77AE9FE1}');
+        if (count($ids) > 0) {
+            $hooks = json_decode(IPS_GetProperty($ids[0], 'Hooks'), true);
             $found = false;
-            foreach ($hooks as $index => $hook)
-            {
-                if ($hook['Hook'] == $WebHook)
-                {
-                    if ($hook['TargetID'] == $TargetID)
+            foreach ($hooks as $index => $hook) {
+                if ($hook['Hook'] == $WebHook) {
+                    if ($hook['TargetID'] == $TargetID) {
                         return;
+                    }
                     $hooks[$index]['TargetID'] = $TargetID;
                     $found = true;
                 }
             }
-            if (!$found)
-            {
-                $hooks[] = Array("Hook" => $WebHook, "TargetID" => $TargetID);
+            if (!$found) {
+                $hooks[] = ['Hook' => $WebHook, 'TargetID' => $TargetID];
             }
-            IPS_SetProperty($ids[0], "Hooks", json_encode($hooks));
+            IPS_SetProperty($ids[0], 'Hooks', json_encode($hooks));
             IPS_ApplyChanges($ids[0]);
         }
     }
@@ -1814,29 +1871,29 @@ if (isset($_GET["Index"]))
     private function GetTableHeader($Config)
     {
         // Kopf der Tabelle erzeugen
-        $html = '<table style="' . $Config['Style']['T'] . '">' . PHP_EOL;
-        $html .= '<colgroup>' . PHP_EOL;
-        foreach ($Config['Spalten'] as $Index => $Value)
-        {
-            $html .= '<col width="' . $Config['Breite'][$Index] . '" />' . PHP_EOL;
+        $html = '<table style="'.$Config['Style']['T'].'">'.PHP_EOL;
+        $html .= '<colgroup>'.PHP_EOL;
+        foreach ($Config['Spalten'] as $Index => $Value) {
+            $html .= '<col width="'.$Config['Breite'][$Index].'" />'.PHP_EOL;
         }
-        $html .= '</colgroup>' . PHP_EOL;
-        $html .= '<thead style="' . $Config['Style']['H'] . '">' . PHP_EOL;
-        $html .= '<tr style="' . $Config['Style']['HR'] . '">';
-        foreach ($Config['Spalten'] as $Index => $Value)
-        {
-            $html .= '<th style="' . $Config['Style']['HF' . $Index] . '">' . $Value . '</th>';
+        $html .= '</colgroup>'.PHP_EOL;
+        $html .= '<thead style="'.$Config['Style']['H'].'">'.PHP_EOL;
+        $html .= '<tr style="'.$Config['Style']['HR'].'">';
+        foreach ($Config['Spalten'] as $Index => $Value) {
+            $html .= '<th style="'.$Config['Style']['HF'.$Index].'">'.$Value.'</th>';
         }
-        $html .= '</tr>' . PHP_EOL;
-        $html .= '</thead>' . PHP_EOL;
-        $html .= '<tbody style="' . $Config['Style']['B'] . '">' . PHP_EOL;
+        $html .= '</tr>'.PHP_EOL;
+        $html .= '</thead>'.PHP_EOL;
+        $html .= '<tbody style="'.$Config['Style']['B'].'">'.PHP_EOL;
+
         return $html;
     }
 
     private function GetTableFooter()
     {
-        $html = '</tbody>' . PHP_EOL;
-        $html .= '</table>' . PHP_EOL;
+        $html = '</tbody>'.PHP_EOL;
+        $html .= '</table>'.PHP_EOL;
+
         return $html;
     }
 
@@ -1951,35 +2008,32 @@ $Config["Style"] = array(
 ### Konfig ENDE !!!
 LSQ_DisplayPlaylist($_IPS["TARGET"],$Config);
 ?>';
+
         return $Script;
     }
 
     private function SetCover()
     {
         $CoverID = @IPS_GetObjectIDByIdent('CoverIMG', $this->InstanceID);
-        if ($CoverID === false)
-        {
+        if ($CoverID === false) {
             $CoverID = IPS_CreateMedia(1);
             IPS_SetParent($CoverID, $this->InstanceID);
             IPS_SetIdent($CoverID, 'CoverIMG');
             IPS_SetName($CoverID, 'Cover');
             IPS_SetPosition($CoverID, 27);
             IPS_SetMediaCached($CoverID, true);
-            IPS_SetMediaFile($CoverID, "media" . DIRECTORY_SEPARATOR . "Cover_" . $this->InstanceID . ".png", False);
+            IPS_SetMediaFile($CoverID, 'media'.DIRECTORY_SEPARATOR.'Cover_'.$this->InstanceID.'.png', false);
         }
         $ParentID = $this->GetParent();
-        if (!($ParentID === false))
-        {
-            $Host = IPS_GetProperty($ParentID, 'Host') . ":" . IPS_GetProperty($ParentID, 'Webport');
-            $Size = $this->ReadPropertyString("CoverSize");
+        if (!($ParentID === false)) {
+            $Host = IPS_GetProperty($ParentID, 'Host').':'.IPS_GetProperty($ParentID, 'Webport');
+            $Size = $this->ReadPropertyString('CoverSize');
             $PlayerID = rawurlencode($this->Address);
-            $CoverRAW = @Sys_GetURLContent("http://" . $Host . "/music/current/" . $Size . ".png?player=" . $PlayerID);
-            if (!($CoverRAW === false))
-            {
+            $CoverRAW = @Sys_GetURLContent('http://'.$Host.'/music/current/'.$Size.'.png?player='.$PlayerID);
+            if (!($CoverRAW === false)) {
                 IPS_SetMediaContent($CoverID, base64_encode($CoverRAW));
             }
         }
-        return;
     }
 
     private function SetConnected($Status)
@@ -1987,39 +2041,38 @@ LSQ_DisplayPlaylist($_IPS["TARGET"],$Config);
         $this->SetValueBoolean('Connected', $Status);
         $this->Connected = $Status;
         $this->Init(false);
-        if ($Status === true)
-            IPS_RunScriptText("<?\nLSQ_RequestAllState(" . $this->InstanceID . ");");
-        else
+        if ($Status === true) {
+            IPS_RunScriptText("<?\nLSQ_RequestAllState(".$this->InstanceID.');');
+        } else {
             $this->_SetStop();
+        }
 //            $this->RequestAllState();
     }
 
     private function Init($throwException = true)
     {
-        if ($this->Connected <> 'noInit')
+        if ($this->Connected != 'noInit') {
             return true;
+        }
 
-        $this->Address = $this->ReadPropertyString("Address");
-        $this->Interval = $this->ReadPropertyInteger("Interval");
+        $this->Address = $this->ReadPropertyString('Address');
+        $this->Interval = $this->ReadPropertyInteger('Interval');
         $this->Connected = GetValueBoolean($this->GetIDForIdent('Connected'));
-        try
-        {
-            if ($this->Address == '')
-            {
+
+        try {
+            if ($this->Address == '') {
                 $this->SetStatus(202);
-                if ($throwException)
+                if ($throwException) {
                     throw new Exception('Address not set.');
+                }
             }
             $ParentID = $this->GetParent();
-            if ($ParentID === false)
-            {
+            if ($ParentID === false) {
                 $this->SetStatus(104);
-                if ($throwException)
+                if ($throwException) {
                     throw new Exception('Instance has no parent.');
-            }
-            else
-            if (!$this->HasActiveParent($ParentID))
-            {
+                }
+            } elseif (!$this->HasActiveParent($ParentID)) {
                 $this->SetStatus(203);
 
                 throw new Exception('Instance has no active parent.');
@@ -2027,11 +2080,11 @@ LSQ_DisplayPlaylist($_IPS["TARGET"],$Config);
             $this->SetStatus(102);
 
             return true;
-        }
-        catch (Exception $exc)
-        {
-            if ($throwException)
+        } catch (Exception $exc) {
+            if ($throwException) {
                 trigger_error($exc->getMessage(), E_USER_NOTICE);
+            }
+
             return false;
         }
     }
@@ -2039,37 +2092,40 @@ LSQ_DisplayPlaylist($_IPS["TARGET"],$Config);
     private function SetValueBoolean($Ident, $value)
     {
         $id = $this->GetIDForIdent($Ident);
-        if (GetValueBoolean($id) <> $value)
-        {
+        if (GetValueBoolean($id) != $value) {
             SetValueBoolean($id, $value);
+
             return true;
         }
+
         return false;
     }
 
     private function SetValueInteger($Ident, $value)
     {
         $id = $this->GetIDForIdent($Ident);
-        if (GetValueInteger($id) <> $value)
-        {
+        if (GetValueInteger($id) != $value) {
             SetValueInteger($id, $value);
+
             return true;
         }
+
         return false;
     }
 
     private function SetValueString($Ident, $value)
     {
         $id = $this->GetIDForIdent($Ident);
-        if (GetValueString($id) <> $value)
-        {
+        if (GetValueString($id) != $value) {
             SetValueString($id, $value);
+
             return true;
         }
+
         return false;
     }
 
-################## DataPoints
+    //################# DataPoints
     // Ankommend von Parent-LMS-Splitter
 
     public function ReceiveData($JSONString)
@@ -2077,32 +2133,28 @@ LSQ_DisplayPlaylist($_IPS["TARGET"],$Config);
         $Data = json_decode($JSONString);
 
         $this->Init(false);
-        if ($this->Address === '') //Keine Adresse Daten nicht verarbeiten
+        if ($this->Address === '') { //Keine Adresse Daten nicht verarbeiten
             return false;
+        }
 
         // Adressen stimmen überein, die Daten sind für uns.
-        if (($this->Address == $Data->LMS->MAC) or ( $this->Address == $Data->LMS->IP))
-        {
+        if (($this->Address == $Data->LMS->MAC) or ($this->Address == $Data->LMS->IP)) {
             // Objekt erzeugen welches die Commands und die Values enthält.
             $Response = new LSQResponse($Data->LMS);
 
             // Ist das Command schon bekannt ?
-            if ($Response->Command <> false)
-            {
+            if ($Response->Command != false) {
                 // Daten prüfen ob Antwort
                 $isResponse = $this->WriteResponse($Response->Command, $Response->Value);
-                if (is_bool($isResponse))
-                {
+                if (is_bool($isResponse)) {
                     $Response->isResponse = $isResponse;
-                    if (!$isResponse)
-                    {
+                    if (!$isResponse) {
                         // Daten dekodieren
                         $this->decodeLSQEvent($Response);
                     }
+
                     return true;
-                }
-                else
-                {
+                } else {
                     throw new Exception($isResponse);
                 }
             }
@@ -2123,121 +2175,110 @@ LSQ_DisplayPlaylist($_IPS["TARGET"],$Config);
     {
         $LSQData->Address = $this->ReadPropertyString('Address');
         // Sende Lock setzen
-        if (!$this->lock("ToParent"))
-        {
-            throw new Exception("Can not send to LMS-Splitter");
+        if (!$this->lock('ToParent')) {
+            throw new Exception('Can not send to LMS-Splitter');
         }
         // Daten senden
-        try
-        {
-            $ret = parent::SendDataToParent(json_encode(Array("DataID" => "{EDDCCB34-E194-434D-93AD-FFDF1B56EF38}", "LSQ" => $LSQData)));
-        }
-        catch (Exception $exc)
-        {
+        try {
+            $ret = parent::SendDataToParent(json_encode(['DataID' => '{EDDCCB34-E194-434D-93AD-FFDF1B56EF38}', 'LSQ' => $LSQData]));
+        } catch (Exception $exc) {
             // Senden fehlgeschlagen
             // Sende Lock aufheben
-            $this->unlock("ToParent");
-            throw new Exception("LMS not reachable");
+            $this->unlock('ToParent');
+
+            throw new Exception('LMS not reachable');
         }
         // Sende Lock aufheben
-        $this->unlock("ToParent");
+        $this->unlock('ToParent');
+
         return $ret;
     }
 
-    ################## Datenaustausch
+    //################# Datenaustausch
 
     private function SendLSQData($LSQData)
     {
-        if (!$this->init())
+        if (!$this->init()) {
             return false;
+        }
 
         // prüfen ob Player connected ?
-        try
-        {
+        try {
             // nur senden wenn connected ODER wir eine connected anfrage senden wollen
-            if ((!$this->Connected) and ( $LSQData->Command <> LSQResponse::connected))
-            {
-                throw new Exception("Device not connected");
+            if ((!$this->Connected) and ($LSQData->Command != LSQResponse::connected)) {
+                throw new Exception('Device not connected');
             }
             $ParentID = $this->GetParent();
-            if (!($ParentID === false))
-            {
-                if (!$this->HasActiveParent($ParentID))
+            if (!($ParentID === false)) {
+                if (!$this->HasActiveParent($ParentID)) {
                     return;
-            }
-            else
+                }
+            } else {
                 return;
+            }
 
-            if ($LSQData->needResponse)
-            {
+            if ($LSQData->needResponse) {
                 //Semaphore setzen
-                if (!$this->lock("LSQData"))
-                {
-                    throw new Exception("Can not send to LMS-Splitter");
+                if (!$this->lock('LSQData')) {
+                    throw new Exception('Can not send to LMS-Splitter');
                 }
                 // Anfrage f??r die Warteschleife schreiben
-                if (!$this->SetWaitForResponse($LSQData->Command))
-                {
-                    $this->unlock("LSQData");
-                    throw new Exception("Can not send to LMS-Splitter");
+                if (!$this->SetWaitForResponse($LSQData->Command)) {
+                    $this->unlock('LSQData');
+
+                    throw new Exception('Can not send to LMS-Splitter');
                 }
-                try
-                {
+
+                try {
                     $this->SendDataToParent($LSQData);
-                }
-                catch (Exception $exc)
-                {
+                } catch (Exception $exc) {
                     //  Daten in Warteschleife l?¶schen
                     $this->ResetWaitForResponse();
-                    $this->unlock("LSQData");
+                    $this->unlock('LSQData');
+
                     throw $exc;
                 }
                 // Auf Antwort warten....
                 $ret = $this->WaitForResponse();
                 // SendeLock  velassen
-                $this->unlock("LSQData");
+                $this->unlock('LSQData');
 
-                if ($ret === false) // Warteschleife lief in Timeout
-                {
-                    //  Daten in Warteschleife l?¶schen                
+                if ($ret === false) { // Warteschleife lief in Timeout
+                    //  Daten in Warteschleife l?¶schen
                     $this->ResetWaitForResponse();
                     // Fehler
-                    throw new Exception("No answer from LMS");
+                    throw new Exception('No answer from LMS');
                 }
+
                 return $ret;
-            }
-            else
-            {
-                try
-                {
+            } else {
+                try {
                     $this->SendDataToParent($LSQData);
-                }
-                catch (Exception $exc)
-                {
+                } catch (Exception $exc) {
                     throw $exc;
                 }
             }
-        }
-        catch (Exception $exc)
-        {
+        } catch (Exception $exc) {
             trigger_error($exc->getMessage(), E_USER_NOTICE);
+
             return false;
         }
     }
 
-################## ResponseBuffer    -   private
+    //################# ResponseBuffer    -   private
 
     private function SetWaitForResponse($Data)
     {
-        if (is_array($Data))
+        if (is_array($Data)) {
             $Data = implode(' ', $Data);
-        if ($this->lock('BufferOut'))
-        {
+        }
+        if ($this->lock('BufferOut')) {
             $buffer = $this->GetIDForIdent('BufferOUT');
             $WaitForResponse = $this->GetIDForIdent('WaitForResponse');
             SetValueString($buffer, $Data);
             SetValueBoolean($WaitForResponse, true);
             $this->unlock('BufferOut');
+
             return true;
         }
 //        throw new Exception("No answer from LMS789");
@@ -2248,40 +2289,39 @@ LSQ_DisplayPlaylist($_IPS["TARGET"],$Config);
     private function WaitForResponse()
     {
         $Event = $this->GetIDForIdent('WaitForResponse');
-        for ($i = 0; $i < 500; $i++)
-        {
-            if (GetValueBoolean($Event))
+        for ($i = 0; $i < 500; $i++) {
+            if (GetValueBoolean($Event)) {
                 IPS_Sleep(10);
-            else
-            {
-                if ($this->lock('BufferOut'))
-                {
+            } else {
+                if ($this->lock('BufferOut')) {
                     $buffer = $this->GetIDForIdent('BufferOUT');
                     $ret = GetValueString($buffer);
-                    SetValueString($buffer, "");
+                    SetValueString($buffer, '');
                     $this->unlock('BufferOut');
-                    if ($ret == '')
+                    if ($ret == '') {
                         return true;
-                    else
+                    } else {
                         return $ret;
+                    }
                 }
 //                throw new Exception("No answer from LMS123");
 
                 return false;
             }
         }
+
         return false;
     }
 
     private function ResetWaitForResponse()
     {
-        if ($this->lock('BufferOut'))
-        {
+        if ($this->lock('BufferOut')) {
             $buffer = $this->GetIDForIdent('BufferOUT');
             $WaitForResponse = $this->GetIDForIdent('WaitForResponse');
             SetValueString($buffer, '');
             SetValueBoolean($WaitForResponse, false);
             $this->unlock('BufferOut');
+
             return true;
         }
 //        throw new Exception("No answer from LMS456");
@@ -2291,83 +2331,85 @@ LSQ_DisplayPlaylist($_IPS["TARGET"],$Config);
 
     private function WriteResponse($Command, $Value)
     {
-        if (is_array($Command))
+        if (is_array($Command)) {
             $Command = implode(' ', $Command);
-        if (is_array($Value))
+        }
+        if (is_array($Value)) {
             $Value = implode(' ', $Value);
+        }
 
         $EventID = $this->GetIDForIdent('WaitForResponse');
-        if (!GetValueBoolean($EventID))
+        if (!GetValueBoolean($EventID)) {
             return false;
+        }
         $BufferID = $this->GetIDForIdent('BufferOUT');
-        if ($Command == GetValueString($BufferID))
-        {
-            if ($this->lock('BufferOut'))
-            {
+        if ($Command == GetValueString($BufferID)) {
+            if ($this->lock('BufferOut')) {
                 SetValueString($BufferID, trim($Value));
                 SetValueBoolean($EventID, false);
                 $this->unlock('BufferOut');
+
                 return true;
             }
+
             return 'Error on write ResponseBuffer';
         }
+
         return false;
     }
 
-################## SEMAPHOREN Helper  - private  
+    //################# SEMAPHOREN Helper  - private
 
     private function lock($ident)
     {
-        for ($i = 0; $i < 100; $i++)
-        {
-            if (IPS_SemaphoreEnter("LMS_" . (string) $this->InstanceID . (string) $ident, 1))
-            {
+        for ($i = 0; $i < 100; $i++) {
+            if (IPS_SemaphoreEnter('LMS_'.(string) $this->InstanceID.(string) $ident, 1)) {
                 return true;
-            }
-            else
+            } else {
                 IPS_Sleep(mt_rand(1, 5));
+            }
         }
+
         return false;
     }
 
     private function unlock($ident)
     {
-        IPS_SemaphoreLeave("LMS_" . (string) $this->InstanceID . (string) $ident);
+        IPS_SemaphoreLeave('LMS_'.(string) $this->InstanceID.(string) $ident);
     }
 
-################## DUMMYS / WOARKAROUNDS - protected
+    //################# DUMMYS / WOARKAROUNDS - protected
 
     protected function HasActiveParent()
     {
         $instance = IPS_GetInstance($this->InstanceID);
-        if ($instance['ConnectionID'] > 0)
-        {
+        if ($instance['ConnectionID'] > 0) {
             $parent = IPS_GetInstance($instance['ConnectionID']);
-            if ($parent['InstanceStatus'] == 102)
+            if ($parent['InstanceStatus'] == 102) {
                 return true;
+            }
         }
+
         return false;
     }
 
     protected function GetParent()
     {
         $instance = IPS_GetInstance($this->InstanceID);
+
         return ($instance['ConnectionID'] > 0) ? $instance['ConnectionID'] : false;
     }
 
     //Remove on next Symcon update
     protected function RegisterProfileInteger($Name, $Icon, $Prefix, $Suffix, $MinValue, $MaxValue, $StepSize)
     {
-
-        if (!IPS_VariableProfileExists($Name))
-        {
+        if (!IPS_VariableProfileExists($Name)) {
             IPS_CreateVariableProfile($Name, 1);
-        }
-        else
-        {
+        } else {
             $profile = IPS_GetVariableProfile($Name);
-            if ($profile['ProfileType'] != 1)
-                throw new Exception("Variable profile type does not match for profile " . $Name);
+            if ($profile['ProfileType'] != 1) {
+                throw new Exception('Variable profile type does not match for profile '.$Name);
+            }
         }
 
         IPS_SetVariableProfileIcon($Name, $Icon);
@@ -2377,56 +2419,51 @@ LSQ_DisplayPlaylist($_IPS["TARGET"],$Config);
 
     protected function RegisterProfileIntegerEx($Name, $Icon, $Prefix, $Suffix, $Associations)
     {
-        if (sizeof($Associations) === 0)
-        {
+        if (count($Associations) === 0) {
             $MinValue = 0;
             $MaxValue = 0;
-        }
-        else
-        {
+        } else {
             $MinValue = $Associations[0][0];
-            $MaxValue = $Associations[sizeof($Associations) - 1][0];
+            $MaxValue = $Associations[count($Associations) - 1][0];
         }
 
         $this->RegisterProfileInteger($Name, $Icon, $Prefix, $Suffix, $MinValue, $MaxValue, 0);
 
-        foreach ($Associations as $Association)
-        {
+        foreach ($Associations as $Association) {
             IPS_SetVariableProfileAssociation($Name, $Association[0], $Association[1], $Association[2], $Association[3]);
         }
     }
 
     protected function SetStatus($InstanceStatus)
     {
-        if (IPS_GetKernelRunlevel() == KR_READY)
+        if (IPS_GetKernelRunlevel() == KR_READY) {
             $OldStatus = IPS_GetInstance($this->InstanceID)['InstanceStatus'];
-        else
+        } else {
             $OldStatus = -1;
-        if ($InstanceStatus <> $OldStatus)
+        }
+        if ($InstanceStatus != $OldStatus) {
             parent::SetStatus($InstanceStatus);
+        }
     }
 
     protected function RegisterTimer($Name, $Interval, $Script)
     {
         $id = @IPS_GetObjectIDByIdent($Name, $this->InstanceID);
-        if ($id === false)
+        if ($id === false) {
             $id = 0;
+        }
 
-
-        if ($id > 0)
-        {
-            if (!IPS_EventExists($id))
-                throw new Exception("Ident with name " . $Name . " is used for wrong object type");
-
-            if (IPS_GetEvent($id)['EventType'] <> 1)
-            {
+        if ($id > 0) {
+            if (!IPS_EventExists($id)) {
+                throw new Exception('Ident with name '.$Name.' is used for wrong object type');
+            }
+            if (IPS_GetEvent($id)['EventType'] != 1) {
                 IPS_DeleteEvent($id);
                 $id = 0;
             }
         }
 
-        if ($id == 0)
-        {
+        if ($id == 0) {
             $id = IPS_CreateEvent(1);
             IPS_SetParent($id, $this->InstanceID);
             IPS_SetIdent($id, $Name);
@@ -2434,14 +2471,11 @@ LSQ_DisplayPlaylist($_IPS["TARGET"],$Config);
         IPS_SetName($id, $Name);
         IPS_SetHidden($id, true);
         IPS_SetEventScript($id, $Script);
-        if ($Interval > 0)
-        {
+        if ($Interval > 0) {
             IPS_SetEventCyclic($id, 0, 0, 0, 0, 1, $Interval);
 
             IPS_SetEventActive($id, true);
-        }
-        else
-        {
+        } else {
             IPS_SetEventCyclic($id, 0, 0, 0, 0, 1, 1);
 
             IPS_SetEventActive($id, false);
@@ -2451,10 +2485,10 @@ LSQ_DisplayPlaylist($_IPS["TARGET"],$Config);
     protected function UnregisterTimer($Name)
     {
         $id = @IPS_GetObjectIDByIdent($Name, $this->InstanceID);
-        if ($id > 0)
-        {
-            if (!IPS_EventExists($id))
+        if ($id > 0) {
+            if (!IPS_EventExists($id)) {
                 throw new Exception('Timer not present');
+            }
             IPS_DeleteEvent($id);
         }
     }
@@ -2462,27 +2496,25 @@ LSQ_DisplayPlaylist($_IPS["TARGET"],$Config);
     protected function SetTimerInterval($Name, $Interval)
     {
         $id = @IPS_GetObjectIDByIdent($Name, $this->InstanceID);
-        if ($id === false)
+        if ($id === false) {
             throw new Exception('Timer not present');
-        if (!IPS_EventExists($id))
+        }
+        if (!IPS_EventExists($id)) {
             throw new Exception('Timer not present');
-
+        }
         $Event = IPS_GetEvent($id);
 
-        if ($Interval < 1)
-        {
-            if ($Event['EventActive'])
+        if ($Interval < 1) {
+            if ($Event['EventActive']) {
                 IPS_SetEventActive($id, false);
-        }
-        else
-        {
-            if ($Event['CyclicTimeValue'] <> $Interval)
+            }
+        } else {
+            if ($Event['CyclicTimeValue'] != $Interval) {
                 IPS_SetEventCyclic($id, 0, 0, 0, 0, 1, $Interval);
-            if (!$Event['EventActive'])
+            }
+            if (!$Event['EventActive']) {
                 IPS_SetEventActive($id, true);
+            }
         }
     }
-
 }
-
-?>

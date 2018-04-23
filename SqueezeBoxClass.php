@@ -1,7 +1,6 @@
-<?
+<?php
 
-if (@constant('IPS_BASE') == null) //Nur wenn Konstanten noch nicht bekannt sind.
-{
+if (@constant('IPS_BASE') == null) { //Nur wenn Konstanten noch nicht bekannt sind.
 // --- BASE MESSAGE
     define('IPS_BASE', 10000);                             //Base Message
     define('IPS_KERNELSHUTDOWN', IPS_BASE + 1);            //Pre Shutdown Message, Runlevel UNINIT Follows
@@ -83,14 +82,14 @@ if (@constant('IPS_BASE') == null) //Nur wenn Konstanten noch nicht bekannt sind
     define('EM_CHANGECYCLICDATETO', IPS_EVENTMESSAGE + 12);
     define('EM_CHANGECYCLICTIMEFROM', IPS_EVENTMESSAGE + 13);
     define('EM_CHANGECYCLICTIMETO', IPS_EVENTMESSAGE + 14);
-// --- MEDIA MANAGER
+    // --- MEDIA MANAGER
     define('IPS_MEDIAMESSAGE', IPS_BASE + 900);           //Media Manager Message
     define('MM_CREATE', IPS_MEDIAMESSAGE + 1);             //On Media Create
     define('MM_DELETE', IPS_MEDIAMESSAGE + 2);             //On Media Delete
     define('MM_CHANGEFILE', IPS_MEDIAMESSAGE + 3);         //On Media File changed
     define('MM_AVAILABLE', IPS_MEDIAMESSAGE + 4);          //Media Available Status changed
     define('MM_UPDATE', IPS_MEDIAMESSAGE + 5);
-// --- LINK MANAGER
+    // --- LINK MANAGER
     define('IPS_LINKMESSAGE', IPS_BASE + 1000);           //Link Manager Message
     define('LM_CREATE', IPS_LINKMESSAGE + 1);             //On Link Create
     define('LM_DELETE', IPS_LINKMESSAGE + 2);             //On Link Delete
@@ -115,14 +114,14 @@ if (@constant('IPS_BASE') == null) //Nur wenn Konstanten noch nicht bekannt sind
     define('PM_ASSOCIATIONADDED', IPS_PROFILEMESSAGE + 7);
     define('PM_ASSOCIATIONREMOVED', IPS_PROFILEMESSAGE + 8);
     define('PM_ASSOCIATIONCHANGED', IPS_PROFILEMESSAGE + 9);
-// --- TIMER POOL
+    // --- TIMER POOL
     define('IPS_TIMERMESSAGE', IPS_BASE + 1400);            //Timer Pool Message
     define('TM_REGISTER', IPS_TIMERMESSAGE + 1);
     define('TM_UNREGISTER', IPS_TIMERMESSAGE + 2);
     define('TM_SETINTERVAL', IPS_TIMERMESSAGE + 3);
     define('TM_UPDATE', IPS_TIMERMESSAGE + 4);
     define('TM_RUNNING', IPS_TIMERMESSAGE + 5);
-// --- STATUS CODES
+    // --- STATUS CODES
     define('IS_SBASE', 100);
     define('IS_CREATING', IS_SBASE + 1); //module is being created
     define('IS_ACTIVE', IS_SBASE + 2); //module created and running
@@ -147,7 +146,6 @@ if (@constant('IPS_BASE') == null) //Nur wenn Konstanten noch nicht bekannt sind
 // Klasse mit Daten zum SENDEN an den LMS
 class LMSData extends stdClass
 {
-
 //    const SendCommand = 0;
 //    const GetData = 1;
 
@@ -162,13 +160,11 @@ class LMSData extends stdClass
 //        $this->Typ = $Typ;
         $this->needResponse = $needResponse;
     }
-
 }
 
 // Klasse mit Daten zum SENDEN an ein Device ÜBER den LMS-Splitter
 class LSQData extends stdClass
 {
-
     public $Address; //DeviceID
     public $Command;
     public $Value;
@@ -180,27 +176,22 @@ class LSQData extends stdClass
         $this->Value = $Value;
         $this->needResponse = $needResponse;
     }
-
 }
 
 class LMSTaggingData extends stdClass
 {
-
     public function __construct($TaggedDataLine)
     {
-        foreach (explode(' ', $TaggedDataLine) as $Line)
-        {
+        foreach (explode(' ', $TaggedDataLine) as $Line) {
             $Data = new LSQTaggingData($Line, false);
             $this->{$Data->Command} = rawurldecode($Data->Value);
         }
     }
-
 }
 
 // Klasse mit den Empfangenen Daten vom LMS
 class LMSResponse extends stdClass
 {
-
     const isServer = 0;
     const isMAC = 1;
     const isIP = 2;
@@ -213,29 +204,23 @@ class LMSResponse extends stdClass
     public function __construct($Data)
     {
         $array = explode(' ', $Data); // Antwortstring in Array umwandeln
-        if (strpos($array[0], '%3A') == 2) //isMAC
-        {
-            $this->Device = LMSResponse::isMAC;
+        if (strpos($array[0], '%3A') == 2) { //isMAC
+            $this->Device = self::isMAC;
             $this->MAC = rawurldecode(array_shift($array));
-        } elseif (strpos($array[0], '.')) //isIP
-        {
-            $this->Device = LMSResponse::isIP;
+        } elseif (strpos($array[0], '.')) { //isIP
+            $this->Device = self::isIP;
             $this->IP = array_shift($array);
-        } else // isServer
-        {
-            $this->Device = LMSResponse::isServer;
+        } else { // isServer
+            $this->Device = self::isServer;
         }
-        foreach ($array as $Part)
-        {
+        foreach ($array as $Part) {
             $this->Data[] = utf8_encode($Part);
         }
     }
-
 }
 
 class LSQButton extends stdClass
 {
-
     const power = 'power';
     const voldown = 'voldown';
     const volup = 'volup';
@@ -247,13 +232,11 @@ class LSQButton extends stdClass
     const preset_6 = 'preset_6.single';
     const jump_rew = 'jump_rew';
     const jump_fwd = 'jump_fwd';
-
 }
 
 // Klasse mit einem Teil der Empfangenen Daten von einem LSQResponse
 class LSQEvent extends stdClass
 {
-
     public $Command;
     public $Value;
     public $isResponse = false;
@@ -264,106 +247,98 @@ class LSQEvent extends stdClass
         $this->Value = $Value;
         $this->isResponse = $isResponse;
     }
-
 }
 
 class LSQTaggingData extends LSQEvent
 {
-
     public function __construct($Data, $isResponse)
     {
-        $Part = explode('%3A', $Data); //        
+        $Part = explode('%3A', $Data); //
         $Command = rawurldecode(array_shift($Part));
-        if (!(strpos($Command, chr(0x20)) === false))
-        {
+        if (!(strpos($Command, chr(0x20)) === false)) {
             $Command = explode(chr(0x20), $Command);
         }
-        if (count($Part) > 1)
-        {
+        if (count($Part) > 1) {
             $Value = implode('%3A', $Part);
-        } else
-        {
+        } else {
             $Value = array_shift($Part);
         }
         parent::__construct($Command, $Value, $isResponse);
         //return new LSQEvent($Command, $Value, $isResponse);
     }
-
 }
 
 class LSMSongInfo extends stdClass
 {
-
     private $SongArray;
     private $Duration;
 
     public function __construct($TaggedDataLine)
     {
         $id = -1;
-        $Songs = array();
+        $Songs = [];
         $Duration = 0;
-        $SongFields = array(
-            'Id' => 1,
-            'Title' => 3,
-            'Genre' => 3, // g
-            'Album' => 3, // l
-            'Artist' => 3, // a
-            'Duration' => 1, // d
-            'Disc' => 1, // i
-            'Disccount' => 1, // q
-            'Bitrate' => 3, // r
-            'Tracknum' => 1, // t
-            'Url' => 3, // u
-            'Remote' => 0,
-            'Rating' => 1, // R
-            'Album_id' => 1, // e
+        $SongFields = [
+            'Id'               => 1,
+            'Title'            => 3,
+            'Genre'            => 3, // g
+            'Album'            => 3, // l
+            'Artist'           => 3, // a
+            'Duration'         => 1, // d
+            'Disc'             => 1, // i
+            'Disccount'        => 1, // q
+            'Bitrate'          => 3, // r
+            'Tracknum'         => 1, // t
+            'Url'              => 3, // u
+            'Remote'           => 0,
+            'Rating'           => 1, // R
+            'Album_id'         => 1, // e
             'Artwork_track_id' => 3, // J
-            'Samplesize' => 3, // I
-            'Remote_title' => 3, //N 
-            'Genre_id' => 1, //p
-            'Artist_id' => 1, //s
-            'Year' => 1, // Y
-            'Name' => 3,
-            'Modified' => 0,
-            'Playlist' => 3
-        );
-        foreach (explode(' ', $TaggedDataLine) as $Line)
-        {
+            'Samplesize'       => 3, // I
+            'Remote_title'     => 3, //N
+            'Genre_id'         => 1, //p
+            'Artist_id'        => 1, //s
+            'Year'             => 1, // Y
+            'Name'             => 3,
+            'Modified'         => 0,
+            'Playlist'         => 3,
+        ];
+        foreach (explode(' ', $TaggedDataLine) as $Line) {
 
 //            $LSQPart = $this->decodeLSQTaggingData($Line, false);
             $LSQPart = new LSQTaggingData($Line, false);
 
-            if (is_array($LSQPart->Command) and ( $LSQPart->Command[0] == LSQResponse::playlist) and ( $LSQPart->Command[1] == LSQResponse::index))
-            {
+            if (is_array($LSQPart->Command) and ($LSQPart->Command[0] == LSQResponse::playlist) and ($LSQPart->Command[1] == LSQResponse::index)) {
                 $id = (int) $LSQPart->Value;
-//                IPS_LogMessage('LMSSongInfo','ROW: '.$Key.' ID: '.$id);                
+//                IPS_LogMessage('LMSSongInfo','ROW: '.$Key.' ID: '.$id);
                 continue;
             }
-            if (is_array($LSQPart->Command))
+            if (is_array($LSQPart->Command)) {
                 continue;
+            }
 
-            if ($LSQPart->Command == LSQResponse::id)
-            {
+            if ($LSQPart->Command == LSQResponse::id) {
                 $id++;
             }
 
-            if ($LSQPart->Command == LSQResponse::duration)
+            if ($LSQPart->Command == LSQResponse::duration) {
                 $Duration = +intval($LSQPart->Value);
+            }
             $Index = ucfirst($LSQPart->Command);
-            if (array_key_exists($Index, $SongFields))
-            {
-                if ($SongFields[$Index] == 0)
+            if (array_key_exists($Index, $SongFields)) {
+                if ($SongFields[$Index] == 0) {
                     $Songs[$id][$Index] = (bool) ($LSQPart->Value);
-                elseif ($SongFields[$Index] == 1)
+                } elseif ($SongFields[$Index] == 1) {
                     $Songs[$id][$Index] = intval($LSQPart->Value);
-                else
+                } else {
                     $Songs[$id][$Index] = /* utf8_decode( */rawurldecode(rawurldecode($LSQPart->Value))/* ) */;
+                }
             }
         }
-        if ((count($Songs) <> 1 ) and isset($Songs[-1]))
-        {
-            if (isset($Songs[-1]))
+        if ((count($Songs) != 1) and isset($Songs[-1])) {
+            if (isset($Songs[-1])) {
                 unset($Songs[-1]);
+            }
         }
         $this->SongArray = $Songs;
         $this->Duration = $Duration;
@@ -392,13 +367,11 @@ class LSMSongInfo extends stdClass
     {
         return count($this->SongArray);
     }
-
 }
 
 // Klasse mit den Empfangenen Daten vom LMS-Splitter
 class LSQResponse extends stdClass
 {
-
     //commands
     const listen = 'listen';
     const signalstrength = 'signalstrength';
@@ -529,52 +502,52 @@ class LSQResponse extends stdClass
 
     public function __construct($Data) // LMS->Data
     {
-        if ($Data->Device == LMSResponse::isMAC)
+        if ($Data->Device == LMSResponse::isMAC) {
             $this->Address = $Data->MAC;
-        elseif ($Data->Device == LMSResponse::isIP)
+        } elseif ($Data->Device == LMSResponse::isIP) {
             $this->Address = $Data->IP;
-        foreach ($Data->Data as $Key => $Value)
-        {
+        }
+        foreach ($Data->Data as $Key => $Value) {
             $Data->Data[$Key] = utf8_decode($Value);
         }
-        switch ($Data->Data[0])
-        {
+        switch ($Data->Data[0]) {
             // 0 = Command 1 = Value
-            case LSQResponse::signalstrength:
-            case LSQResponse::name:
-            case LSQResponse::connected:
-            case LSQResponse::sleep:
-            case LSQResponse::listen:
-            case LSQResponse::sync:
-            case LSQResponse::power:
-            case LSQResponse::linesperscreen:
-            case LSQResponse::irenable:
-            case LSQResponse::connect:
-            case LSQResponse::play:
-            case LSQResponse::pause:
-            case LSQResponse::stop:
-            case LSQResponse::mode:
-            case LSQResponse::client:
-            case LSQResponse::album:
-            case LSQResponse::artist:
-            case LSQResponse::genre:
-            case LSQResponse::duration:
-            case LSQResponse::time:
-            case LSQResponse::newmetadata:
-            case LSQResponse::title:
+            case self::signalstrength:
+            case self::name:
+            case self::connected:
+            case self::sleep:
+            case self::listen:
+            case self::sync:
+            case self::power:
+            case self::linesperscreen:
+            case self::irenable:
+            case self::connect:
+            case self::play:
+            case self::pause:
+            case self::stop:
+            case self::mode:
+            case self::client:
+            case self::album:
+            case self::artist:
+            case self::genre:
+            case self::duration:
+            case self::time:
+            case self::newmetadata:
+            case self::title:
                 $this->Command = array_shift($Data->Data);
-                if (isset($Data->Data[0]))
+                if (isset($Data->Data[0])) {
                     $this->Value = array_shift($Data->Data);
+                }
                 break;
             // 0 = Command 1=multiValue
-            case LSQResponse::status:
+            case self::status:
                 $this->Command[0] = array_shift($Data->Data);
                 $this->Command[1] = array_shift($Data->Data);
                 $this->Command[2] = array_shift($Data->Data);
-//                $this->Command[3] =array_shift($Data->Data);                
+//                $this->Command[3] =array_shift($Data->Data);
                 $this->Value = array_values($Data->Data);
                 break;
-            case LSQResponse::playlistcontrol:
+            case self::playlistcontrol:
                 $this->Command = array_shift($Data->Data);
                 $this->Value = $Data->Data;
                 break;
@@ -582,38 +555,40 @@ class LSQResponse extends stdClass
 //        LSQResponse::display,
 //        LSQResponse::displaynow,
 //        LSQResponse::playerpref
-            // 1 = Command 2 = Value             
-            case LSQResponse::button:
-            case LSQResponse::mixer:
-            case LSQResponse::playlist:
-            case LSQResponse::playlists:
+            // 1 = Command 2 = Value
+            case self::button:
+            case self::mixer:
+            case self::playlist:
+            case self::playlists:
                 $this->Command[0] = array_shift($Data->Data);
                 $this->Command[1] = array_shift($Data->Data);
-                if (isset($Data->Data[1]))
-                {
+                if (isset($Data->Data[1])) {
                     $this->Value = $Data->Data;
 
 //                    $this->Value[0] =  array_shift($Data->Data);
 //                    $this->Value[1] =  array_shift($Data->Data);
-                } elseif (isset($Data->Data[0]))
+                } elseif (isset($Data->Data[0])) {
                     $this->Value = array_shift($Data->Data);
+                }
                 break;
 
-            // 2 = Command 3 = Value             
-            case LSQResponse::prefset:
+            // 2 = Command 3 = Value
+            case self::prefset:
                 $this->Command[0] = array_shift($Data->Data);
                 $this->Command[1] = array_shift($Data->Data);
                 $this->Command[2] = array_shift($Data->Data);
-                if (isset($Data->Data[0]))
+                if (isset($Data->Data[0])) {
                     $this->Value = array_shift($Data->Data);
+                }
                 break;
             default:
                 $this->Command = array_shift($Data->Data);
-                if (isset($Data->Data[0]))
+                if (isset($Data->Data[0])) {
                     $this->Value = array_shift($Data->Data);
+                }
                 break;
             case 'displaynotify': //ignorieren
-            case 'menustatus': //ignorieren                
+            case 'menustatus': //ignorieren
                 $this->Command = false;
                 break;
         }
@@ -627,17 +602,11 @@ class LSQResponse extends stdClass
       } */
 }
 
-if (!function_exists("array_column"))
-{
-
+if (!function_exists('array_column')) {
     function array_column($array, $column_name)
     {
-
-        return array_map(function($element) use($column_name)
-        {
+        return array_map(function ($element) use ($column_name) {
             return $element[$column_name];
         }, $array);
     }
-
 }
-?>
