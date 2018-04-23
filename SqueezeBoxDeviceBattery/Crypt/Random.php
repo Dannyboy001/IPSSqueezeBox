@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Random Number Generator
+ * Random Number Generator.
  *
  * The idea behind this function is that it can be easily replaced with your own crypt_random_string()
  * function. eg. maybe you have a better source of entropy for creating the initial states or whatever.
@@ -36,10 +36,11 @@
  * THE SOFTWARE.
  *
  * @category  Crypt
- * @package   Crypt_Random
+ *
  * @author    Jim Wigginton <terrafrost@php.net>
  * @copyright 2007 Jim Wigginton
  * @license   http://www.opensource.org/licenses/mit-license.html  MIT License
+ *
  * @link      http://phpseclib.sourceforge.net
  */
 
@@ -47,7 +48,7 @@
 // have phpseclib as a requirement as well. if you're developing such a program you may encounter
 // a "Cannot redeclare crypt_random_string()" error.
 if (!function_exists('crypt_random_string')) {
-    /**
+    /*
      * "Is Windows" test
      *
      * @access private
@@ -61,9 +62,9 @@ if (!function_exists('crypt_random_string')) {
      * microoptimizations because this function has the potential of being called a huge number of times.
      * eg. for RSA key generation.
      *
-     * @param Integer $length
-     * @return String
-     * @access public
+     * @param int $length
+     *
+     * @return string
      */
     function crypt_random_string($length)
     {
@@ -149,12 +150,12 @@ if (!function_exists('crypt_random_string')) {
             session_start();
 
             $v = $seed = $_SESSION['seed'] = pack('H*', sha1(
-                serialize($_SERVER) .
-                serialize($_POST) .
-                serialize($_GET) .
-                serialize($_COOKIE) .
-                serialize($GLOBALS) .
-                serialize($_SESSION) .
+                serialize($_SERVER).
+                serialize($_POST).
+                serialize($_GET).
+                serialize($_COOKIE).
+                serialize($GLOBALS).
+                serialize($_SESSION).
                 serialize($_OLD_SESSION)
             ));
             if (!isset($_SESSION['count'])) {
@@ -187,8 +188,8 @@ if (!function_exists('crypt_random_string')) {
             // http://tools.ietf.org/html/rfc4253#section-7.2
             //
             // see the is_string($crypto) part for an example of how to expand the keys
-            $key = pack('H*', sha1($seed . 'A'));
-            $iv = pack('H*', sha1($seed . 'C'));
+            $key = pack('H*', sha1($seed.'A'));
+            $iv = pack('H*', sha1($seed.'C'));
 
             // ciphers are used as per the nist.gov link below. also, see this link:
             //
@@ -232,6 +233,7 @@ if (!function_exists('crypt_random_string')) {
                     break;
                 default:
                     user_error('crypt_random_string requires at least one symmetric cipher be loaded');
+
                     return false;
             }
 
@@ -255,8 +257,9 @@ if (!function_exists('crypt_random_string')) {
             $i = $crypto->encrypt(microtime()); // strlen(microtime()) == 21
             $r = $crypto->encrypt($i ^ $v); // strlen($v) == 20
             $v = $crypto->encrypt($r ^ $i); // strlen($r) == 20
-            $result.= $r;
+            $result .= $r;
         }
+
         return substr($result, 0, $length);
     }
 }
@@ -269,8 +272,8 @@ if (!function_exists('phpseclib_resolve_include_path')) {
      * PHP 5.3.2) with fallback implementation for earlier PHP versions.
      *
      * @param string $filename
+     *
      * @return mixed Filename (string) on success, false otherwise.
-     * @access public
      */
     function phpseclib_resolve_include_path($filename)
     {
@@ -289,7 +292,7 @@ if (!function_exists('phpseclib_resolve_include_path')) {
         foreach ($paths as $prefix) {
             // path's specified in include_path don't always end in /
             $ds = substr($prefix, -1) == DIRECTORY_SEPARATOR ? '' : DIRECTORY_SEPARATOR;
-            $file = $prefix . $ds . $filename;
+            $file = $prefix.$ds.$filename;
             if (file_exists($file)) {
                 return realpath($file);
             }

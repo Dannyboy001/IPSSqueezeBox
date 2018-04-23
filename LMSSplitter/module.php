@@ -1,22 +1,21 @@
-<?
+<?php
 
-require_once(__DIR__ . "/../SqueezeBoxClass.php");  // diverse Klassen
+require_once __DIR__.'/../SqueezeBoxClass.php';  // diverse Klassen
 
 class LMSSplitter extends IPSModule
 {
-
     public function Create()
     {
         //Never delete this line!
         parent::Create();
-        $this->RequireParent("{3CFF0FD9-E306-41DB-9B5A-9D06D38576C3}", "Logitech Media Server");
-        $this->RegisterPropertyString("Host", "");
-        $this->RegisterPropertyBoolean("Open", false);
-        $this->RegisterPropertyInteger("Port", 9090);
-        $this->RegisterPropertyInteger("Webport", 9000);
+        $this->RequireParent('{3CFF0FD9-E306-41DB-9B5A-9D06D38576C3}', 'Logitech Media Server');
+        $this->RegisterPropertyString('Host', '');
+        $this->RegisterPropertyBoolean('Open', false);
+        $this->RegisterPropertyInteger('Port', 9090);
+        $this->RegisterPropertyInteger('Webport', 9000);
         $ID = $this->RegisterScript('PlaylistDesign', 'Playlist Config', $this->CreatePlaylistConfigScript(), -7);
         IPS_SetHidden($ID, true);
-        $this->RegisterPropertyInteger("Playlistconfig", $ID);
+        $this->RegisterPropertyInteger('Playlistconfig', $ID);
         $this->RegisterTimer('KeepAlive', 0, 'LMS_KeepAlive($_IPS["TARGET"]);');
     }
 
@@ -34,174 +33,151 @@ class LMSSplitter extends IPSModule
         $Open = $this->ReadPropertyBoolean('Open');
         $NewState = IS_ACTIVE;
 
-        if (!$Open)
+        if (!$Open) {
             $NewState = IS_INACTIVE;
+        }
 
-        if ($this->ReadPropertyString('Host') == '')
-        {
-            if ($Open)
-            {
+        if ($this->ReadPropertyString('Host') == '') {
+            if ($Open) {
                 $NewState = IS_EBASE + 2;
                 $Open = false;
             }
         }
 
-        if ($this->ReadPropertyInteger('Port') == 0)
-        {
-            if ($Open)
-            {
+        if ($this->ReadPropertyInteger('Port') == 0) {
+            if ($Open) {
                 $NewState = IS_EBASE + 2;
                 $Open = false;
             }
         }
         // Zwangskonfiguration des ClientSocket
         $ParentID = $this->GetParent();
-        if ($ParentID > 0)
-        {
-            if (IPS_GetProperty($ParentID, 'Host') <> $this->ReadPropertyString('Host'))
-            {
+        if ($ParentID > 0) {
+            if (IPS_GetProperty($ParentID, 'Host') != $this->ReadPropertyString('Host')) {
                 IPS_SetProperty($ParentID, 'Host', $this->ReadPropertyString('Host'));
 //                $ChangeParentSetting = true;
             }
-            if (IPS_GetProperty($ParentID, 'Port') <> $this->ReadPropertyInteger('Port'))
-            {
+            if (IPS_GetProperty($ParentID, 'Port') != $this->ReadPropertyInteger('Port')) {
                 IPS_SetProperty($ParentID, 'Port', $this->ReadPropertyInteger('Port'));
 //                $ChangeParentSetting = true;
             }
             // Keine Verbindung erzwingen wenn Host leer ist, sonst folgt später Exception.
-            if ($Open)
-            {
-
+            if ($Open) {
                 $Open = @Sys_Ping($this->ReadPropertyString('Host'), 500);
-                if (!$Open)
-                {
+                if (!$Open) {
                     $NewState = IS_EBASE + 3;
                 }
             }
-            if (IPS_GetProperty($ParentID, 'Open') <> $Open)
-            {
+            if (IPS_GetProperty($ParentID, 'Open') != $Open) {
                 IPS_SetProperty($ParentID, 'Open', $Open);
 //                $ChangeParentSetting = true;
             }
 
-            if (IPS_HasChanges($ParentID))
-            {
+            if (IPS_HasChanges($ParentID)) {
                 @IPS_ApplyChanges($ParentID);
-                if (!$this->HasActiveParent($ParentID) and $Open)
+                if (!$this->HasActiveParent($ParentID) and $Open) {
                     $NewState = IS_EBASE + 3;
+                }
             }
-        }
-        else
-        {
-            if ($Open)
-            {
+        } else {
+            if ($Open) {
                 $NewState = IS_INACTIVE;
                 $Open = false;
             }
         }
         // Eigene Profile
-        $this->RegisterProfileIntegerEx("Scanner.SqueezeboxServer", "Gear", "", "", Array(
-            Array(0, "Standby", "", -1),
-            Array(1, "Abbruch", "", -1),
-            Array(2, "Scan", "", -1),
-            Array(3, "Nur Playlists", "", -1),
-            Array(4, "Vollständig", "", -1)
-        ));
-        $this->RegisterProfileInteger("PlayerSelect" . $this->InstanceID . ".SqueezeboxServer", "Speaker", "", "", 0, 0, 0);
+        $this->RegisterProfileIntegerEx('Scanner.SqueezeboxServer', 'Gear', '', '', [
+            [0, 'Standby', '', -1],
+            [1, 'Abbruch', '', -1],
+            [2, 'Scan', '', -1],
+            [3, 'Nur Playlists', '', -1],
+            [4, 'Vollständig', '', -1],
+        ]);
+        $this->RegisterProfileInteger('PlayerSelect'.$this->InstanceID.'.SqueezeboxServer', 'Speaker', '', '', 0, 0, 0);
         // Eigene Variablen
-        $this->RegisterVariableInteger("RescanState", "Scanner", "Scanner.SqueezeboxServer", 1);
-        $this->RegisterVariableString("RescanInfo", "Rescan Status", "", 2);
-        $this->RegisterVariableString("RescanProgress", "Rescan Fortschritt", "", 3);
-        $this->EnableAction("RescanState");
-        $this->RegisterVariableInteger("PlayerSelect", "Player wählen", "PlayerSelect" . $this->InstanceID . ".SqueezeboxServer", 4);
-        $this->EnableAction("PlayerSelect");
-        $this->RegisterVariableString("Playlists", "Playlisten", "~HTMLBox", 5);
+        $this->RegisterVariableInteger('RescanState', 'Scanner', 'Scanner.SqueezeboxServer', 1);
+        $this->RegisterVariableString('RescanInfo', 'Rescan Status', '', 2);
+        $this->RegisterVariableString('RescanProgress', 'Rescan Fortschritt', '', 3);
+        $this->EnableAction('RescanState');
+        $this->RegisterVariableInteger('PlayerSelect', 'Player wählen', 'PlayerSelect'.$this->InstanceID.'.SqueezeboxServer', 4);
+        $this->EnableAction('PlayerSelect');
+        $this->RegisterVariableString('Playlists', 'Playlisten', '~HTMLBox', 5);
 
         // Eigene Scripte
-        $ID = $this->RegisterScript("WebHookPlaylist", "WebHookPlaylist", $this->CreateWebHookScript(), -8);
+        $ID = $this->RegisterScript('WebHookPlaylist', 'WebHookPlaylist', $this->CreateWebHookScript(), -8);
         IPS_SetHidden($ID, true);
-        if (IPS_GetKernelRunlevel() == KR_READY)
-            $this->RegisterHook('/hook/LMSPlaylist' . $this->InstanceID, $ID);
+        if (IPS_GetKernelRunlevel() == KR_READY) {
+            $this->RegisterHook('/hook/LMSPlaylist'.$this->InstanceID, $ID);
+        }
 
         $ID = $this->RegisterScript('PlaylistDesign', 'Playlist Config', $this->CreatePlaylistConfigScript(), -7);
         IPS_SetHidden($ID, true);
 
         //Workaround für persistente Daten der Instanz
-        $this->RegisterVariableString("BufferIN", "BufferIN", "", -3);
-        $this->RegisterVariableString("BufferOUT", "BufferOUT", "", -2);
-        $this->RegisterVariableBoolean("WaitForResponse", "WaitForResponse", "", -1);
+        $this->RegisterVariableString('BufferIN', 'BufferIN', '', -3);
+        $this->RegisterVariableString('BufferOUT', 'BufferOUT', '', -2);
+        $this->RegisterVariableBoolean('WaitForResponse', 'WaitForResponse', '', -1);
         IPS_SetHidden($this->GetIDForIdent('BufferIN'), true);
         IPS_SetHidden($this->GetIDForIdent('BufferOUT'), true);
         IPS_SetHidden($this->GetIDForIdent('WaitForResponse'), true);
 
         // Wenn wir verbunden sind, am LMS mit listen anmelden für Events
         if (($Open)
-                and ( $this->HasActiveParent($ParentID)))
-        {
-            switch (IPS_GetKernelRunlevel())
-            {
+                and ($this->HasActiveParent($ParentID))) {
+            switch (IPS_GetKernelRunlevel()) {
                 case KR_READY:
                     $hasNewState = $this->SetStatus($NewState);
-                    if (($NewState == IS_ACTIVE) and $hasNewState === true)
-                    {
-                        try
-                        {
-                            $Data = new LMSData("listen", "1");
+                    if (($NewState == IS_ACTIVE) and $hasNewState === true) {
+                        try {
+                            $Data = new LMSData('listen', '1');
                             $this->SendLMSData($Data);
                             $this->RefreshPlayerList();
-                            $Data = new LMSData("rescan", "?", false);
+                            $Data = new LMSData('rescan', '?', false);
                             $this->SendLMSData($Data);
-                        }
-                        catch (Exception $exc)
-                        {
+                        } catch (Exception $exc) {
                             trigger_error($exc->getMessage(), $exc->getCode());
+
                             return false;
                         }
 
-                        $DevicesIDs = IPS_GetInstanceListByModuleID("{118189F9-DC7E-4DF4-80E1-9A4DF0882DD7}");
-                        foreach ($DevicesIDs as $Device)
-                        {
-                            if (IPS_GetInstance($Device)['ConnectionID'] == $this->InstanceID)
-                            {
+                        $DevicesIDs = IPS_GetInstanceListByModuleID('{118189F9-DC7E-4DF4-80E1-9A4DF0882DD7}');
+                        foreach ($DevicesIDs as $Device) {
+                            if (IPS_GetInstance($Device)['ConnectionID'] == $this->InstanceID) {
                                 @IPS_ApplyChanges($Device);
                             }
                         }
                     }
                     break;
                 case KR_INIT:
-                    if ($NewState == IS_ACTIVE)
+                    if ($NewState == IS_ACTIVE) {
                         $this->SetStatus(IS_EBASE + 3);
-                    else
+                    } else {
                         $this->SetStatus($NewState);
+                    }
                     break;
             }
-        }
-        else
-        {
-
+        } else {
             $this->SetStatus($NewState);
         }
     }
 
-################## PUBLIC
+    //################# PUBLIC
+
     /**
      * This function will be available automatically after the module is imported with the module control.
-     * Using the custom prefix this function will be callable from PHP and JSON-RPC through:
+     * Using the custom prefix this function will be callable from PHP and JSON-RPC through:.
      */
-
     public function KeepAlive()
     {
-        try
-        {
-            $Data = new LMSData("listen", "1");
+        try {
+            $Data = new LMSData('listen', '1');
             $this->SendLMSData($Data);
             $this->RefreshPlayerList();
-            $Data = new LMSData("rescan", "?", false);
+            $Data = new LMSData('rescan', '?', false);
             $this->SendLMSData($Data);
-        }
-        catch (Exception $exc)
-        {
+        } catch (Exception $exc) {
             trigger_error($exc->getMessage(), $exc->getCode());
+
             return false;
         }
     }
@@ -213,7 +189,7 @@ class LMSSplitter extends IPSModule
 //        if (is_bool($ret))
 //            return $ret;
         return $ret;
-//return new LMSTaggingData($ret);
+        //return new LMSTaggingData($ret);
 //return $this->SendDataToParent($Text);
     }
 
@@ -225,45 +201,49 @@ class LMSSplitter extends IPSModule
     public function GetRescanProgress()
     {
         $ret = $this->SendLMSData(new LMSData('rescanprogress'));
-        if ($ret === false)
+        if ($ret === false) {
             return false;
+        }
         $LSQEvent = new LSQTaggingData($ret, true);
+
         return (bool) $LSQEvent->Value;
     }
 
     public function GetNumberOfPlayers()
     {
-        $players = $this->SendLMSData(new LMSData(array('player', 'count'), '?'));
-        if ($players === false)
+        $players = $this->SendLMSData(new LMSData(['player', 'count'], '?'));
+        if ($players === false) {
             return false;
+        }
+
         return (int) $players;
     }
 
     public function CreateAllPlayer()
     {
         $players = $this->GetNumberOfPlayers();
-        if ($players === false)
+        if ($players === false) {
             return false;
-        $DevicesIDs = IPS_GetInstanceListByModuleID("{118189F9-DC7E-4DF4-80E1-9A4DF0882DD7}");
-        $CreatedPlayers = array();
-        foreach ($DevicesIDs as $Device)
-        {
+        }
+        $DevicesIDs = IPS_GetInstanceListByModuleID('{118189F9-DC7E-4DF4-80E1-9A4DF0882DD7}');
+        $CreatedPlayers = [];
+        foreach ($DevicesIDs as $Device) {
             $KnownDevices[] = IPS_GetProperty($Device, 'Address');
         }
-        for ($i = 0; $i < $players; $i++)
-        {
-            $player = $this->SendLMSData(new LMSData(array('player', 'id', $i), '?'));
-            if ($player === false)
+        for ($i = 0; $i < $players; $i++) {
+            $player = $this->SendLMSData(new LMSData(['player', 'id', $i], '?'));
+            if ($player === false) {
                 continue;
+            }
             $playermac = rawurldecode($player);
 
-            if (in_array($playermac, $KnownDevices))
+            if (in_array($playermac, $KnownDevices)) {
                 continue;
-            $NewDevice = IPS_CreateInstance("{118189F9-DC7E-4DF4-80E1-9A4DF0882DD7}");
-            $playerName = $this->SendLMSData(new LMSData(array('player', 'name', $i), '?'));
+            }
+            $NewDevice = IPS_CreateInstance('{118189F9-DC7E-4DF4-80E1-9A4DF0882DD7}');
+            $playerName = $this->SendLMSData(new LMSData(['player', 'name', $i], '?'));
             IPS_SetName($NewDevice, $playerName);
-            if (IPS_GetInstance($NewDevice)['ConnectionID'] <> $this->InstanceID)
-            {
+            if (IPS_GetInstance($NewDevice)['ConnectionID'] != $this->InstanceID) {
                 @IPS_DisconnectInstance($NewDevice);
                 IPS_ConnectInstance($NewDevice, $this->InstanceID);
             }
@@ -271,158 +251,169 @@ class LMSSplitter extends IPSModule
             IPS_ApplyChanges($NewDevice);
             $CreatedPlayers[] = $NewDevice;
         }
+
         return $CreatedPlayers;
     }
 
     public function GetPlayerInfo(int $Index)
     {
-        if (!is_int($Index))
-        {
-            trigger_error("Index must be integer.", E_USER_NOTICE);
+        if (!is_int($Index)) {
+            trigger_error('Index must be integer.', E_USER_NOTICE);
+
             return false;
         }
-        $ret = $this->SendLMSData(new LMSData(array('players', (string) $Index, '1')));
+        $ret = $this->SendLMSData(new LMSData(['players', (string) $Index, '1']));
 //        $LSQEvent = new LSQTaggingData($ret, true);
-        if ($ret === false)
-        {
-            trigger_error("Error read player info.", E_USER_NOTICE);
+        if ($ret === false) {
+            trigger_error('Error read player info.', E_USER_NOTICE);
+
             return false;
         }
         $Data = new LMSResponse($ret);
-        $LSQEvent = array();
-        foreach ($Data->Data as $Part)
-        {
+        $LSQEvent = [];
+        foreach ($Data->Data as $Part) {
             $Pair = new LSQTaggingData($Part, true);
-            if (is_numeric($Pair->Value))
+            if (is_numeric($Pair->Value)) {
                 $Pair->Value = (int) $Pair->Value;
-            else
+            } else {
                 $Pair->Value = rawurldecode($Pair->Value);
+            }
             $LSQEvent[ucfirst($Pair->Command)] = $Pair->Value;
         }
-        if (!isset($LSQEvent['Playerid']))
-        {
+        if (!isset($LSQEvent['Playerid'])) {
             trigger_error('Invalid Index', E_USER_NOTICE);
+
             return false;
         }
-        $DevicesIDs = IPS_GetInstanceListByModuleID("{118189F9-DC7E-4DF4-80E1-9A4DF0882DD7}");
+        $DevicesIDs = IPS_GetInstanceListByModuleID('{118189F9-DC7E-4DF4-80E1-9A4DF0882DD7}');
         $FoundId = 0;
-        foreach ($DevicesIDs as $Device)
-        {
-            if (IPS_GetProperty($Device, 'Address') == $LSQEvent['Playerid'])
+        foreach ($DevicesIDs as $Device) {
+            if (IPS_GetProperty($Device, 'Address') == $LSQEvent['Playerid']) {
                 $FoundId = $Device;
+            }
         }
         $LSQEvent['Instanceid'] = $FoundId;
+
         return $LSQEvent;
     }
 
     public function GetLibaryInfo()
     {
-        $genres = $this->SendLMSData(new LMSData(array('info', 'total', 'genres'), '?'));
-        if ($genres === false)
+        $genres = $this->SendLMSData(new LMSData(['info', 'total', 'genres'], '?'));
+        if ($genres === false) {
             return false;
-        $artists = $this->SendLMSData(new LMSData(array('info', 'total', 'artists'), '?'));
-        if ($artists === false)
+        }
+        $artists = $this->SendLMSData(new LMSData(['info', 'total', 'artists'], '?'));
+        if ($artists === false) {
             return false;
-        $albums = $this->SendLMSData(new LMSData(array('info', 'total', 'albums'), '?'));
-        if ($albums === false)
+        }
+        $albums = $this->SendLMSData(new LMSData(['info', 'total', 'albums'], '?'));
+        if ($albums === false) {
             return false;
-        $songs = $this->SendLMSData(new LMSData(array('info', 'total', 'songs'), '?'));
-        if ($songs === false)
+        }
+        $songs = $this->SendLMSData(new LMSData(['info', 'total', 'songs'], '?'));
+        if ($songs === false) {
             return false;
-        $ret = array('Genres' => intval($genres), 'Artists' => intval($artists), 'Albums' => intval($albums), 'Songs' => intval($songs));
+        }
+        $ret = ['Genres' => intval($genres), 'Artists' => intval($artists), 'Albums' => intval($albums), 'Songs' => intval($songs)];
+
         return $ret;
     }
 
     public function GetVersion()
     {
         $ret = $this->SendLMSData(new LMSData('version', '?'));
+
         return $ret;
     }
 
     public function GetSongInfoByFileID(int $FileID)
     {
-        if (!is_int($FileID))
-        {
-            trigger_error("FileID must be integer.", E_USER_NOTICE);
+        if (!is_int($FileID)) {
+            trigger_error('FileID must be integer.', E_USER_NOTICE);
+
             return false;
         }
-        $Data = $this->SendLMSData(new LMSData(array('songinfo', '0', '20'), array('track_id:' . $FileID, 'tags:gladiqrRtueJINpsy')));
-        if ($Data === false)
-            return FALSE;
+        $Data = $this->SendLMSData(new LMSData(['songinfo', '0', '20'], ['track_id:'.$FileID, 'tags:gladiqrRtueJINpsy']));
+        if ($Data === false) {
+            return false;
+        }
         $SongInfo = new LSMSongInfo($Data);
         $Song = $SongInfo->GetSong();
-        if (is_null($Song))
-        {
-            trigger_error("FileID not valid.", E_USER_NOTICE);
+        if (is_null($Song)) {
+            trigger_error('FileID not valid.', E_USER_NOTICE);
+
             return false;
         }
+
         return $Song;
     }
 
     public function GetSongInfoByFileURL(string $FileURL)
     {
-        if (!is_string($FileURL))
-        {
-            trigger_error("FileURL must be string.", E_USER_NOTICE);
+        if (!is_string($FileURL)) {
+            trigger_error('FileURL must be string.', E_USER_NOTICE);
+
             return false;
         }
-        $Data = $this->SendLMSData(new LMSData(array('songinfo', '0', '20'), array('url:' . rawurlencode($FileURL), 'tags:gladiqrRtueJINpsy')));
-        if ($Data === false)
-            return FALSE;
+        $Data = $this->SendLMSData(new LMSData(['songinfo', '0', '20'], ['url:'.rawurlencode($FileURL), 'tags:gladiqrRtueJINpsy']));
+        if ($Data === false) {
+            return false;
+        }
         $SongInfo = new LSMSongInfo($Data);
         $Song = $SongInfo->GetSong();
-        if (count($Song) == 1)
-        {
-            trigger_error("FileURL not valid.", E_USER_NOTICE);
+        if (count($Song) == 1) {
+            trigger_error('FileURL not valid.', E_USER_NOTICE);
+
             return false;
         }
+
         return $Song;
     }
 
     public function GetSyncGroups()
     {
         $ret = $this->SendLMSData(new LMSData('syncgroups', '?'));
-        if (is_bool($ret))
+        if (is_bool($ret)) {
             return false;
+        }
 
         $Data = new LMSTaggingData($ret);
         $AllPlayerIDs = IPS_GetInstanceListByModuleID('{118189F9-DC7E-4DF4-80E1-9A4DF0882DD7}');
-        $Addresses = array();
-        $FoundInstanzIDs = array();
-        foreach ($AllPlayerIDs as $DeviceID)
-        {
+        $Addresses = [];
+        $FoundInstanzIDs = [];
+        foreach ($AllPlayerIDs as $DeviceID) {
             $Addresses[$DeviceID] = IPS_GetProperty($DeviceID, 'Address');
         }
         $Search = explode(',', $Data->sync_members);
-        foreach ($Search as $Value)
-        {
+        foreach ($Search as $Value) {
             $FoundInstanzIDs[] = array_search($Value, $Addresses);
         }
-        if (count($FoundInstanzIDs) > 0)
+        if (count($FoundInstanzIDs) > 0) {
             return $FoundInstanzIDs;
-        else
+        } else {
             return false;
+        }
     }
 
 //
     public function CreatePlaylist(string $Name) // ToDo antwort zerlegen
     {
-        if (!is_string($Name))
-        {
-            trigger_error("Name must be string.", E_USER_NOTICE);
+        if (!is_string($Name)) {
+            trigger_error('Name must be string.', E_USER_NOTICE);
+
             return false;
         }
-        $raw = $this->SendLMSData(new LMSData(array('playlists', 'new'), 'name:' . rawurlencode($Name)));
-        if ($raw === false)
+        $raw = $this->SendLMSData(new LMSData(['playlists', 'new'], 'name:'.rawurlencode($Name)));
+        if ($raw === false) {
             return false;
+        }
         $Data = new LMSTaggingData($raw);
-        if (property_exists($Data, 'playlist_id'))
-        {
+        if (property_exists($Data, 'playlist_id')) {
             return (int) $Data->playlist_id;
-        }
-        else
-        {
-            trigger_error("Playlist already exists.", E_USER_NOTICE);
+        } else {
+            trigger_error('Playlist already exists.', E_USER_NOTICE);
+
             return false;
         }
     }
@@ -430,22 +421,21 @@ class LMSSplitter extends IPSModule
 //
     public function DeletePlaylist(int $PlayListId) // ToDo antwort zerlegen
     {
-        if (!is_int($PlayListId))
-        {
-            trigger_error("PlayListId must be integer.", E_USER_NOTICE);
+        if (!is_int($PlayListId)) {
+            trigger_error('PlayListId must be integer.', E_USER_NOTICE);
+
             return false;
         }
-        $raw = $this->SendLMSData(new LMSData(array('playlists', 'delete'), 'playlist_id:' . $PlayListId));
-        if ($raw === false)
+        $raw = $this->SendLMSData(new LMSData(['playlists', 'delete'], 'playlist_id:'.$PlayListId));
+        if ($raw === false) {
             return false;
+        }
         $Data = new LMSTaggingData($raw);
-        if (property_exists($Data, 'playlist_id'))
-        {
-            return ($PlayListId == (int) $Data->playlist_id);
-        }
-        else
-        {
-            trigger_error("Error deleting Playlist.", E_USER_NOTICE);
+        if (property_exists($Data, 'playlist_id')) {
+            return $PlayListId == (int) $Data->playlist_id;
+        } else {
+            trigger_error('Error deleting Playlist.', E_USER_NOTICE);
+
             return false;
         }
     }
@@ -453,81 +443,80 @@ class LMSSplitter extends IPSModule
 //
     public function AddFileToPlaylist(int $PlayListId, string $SongUrl, int $Track = null)
     {
-        $raw = $this->SendLMSData(new LMSData(array('playlists', 'edit'), array('cmd:add', 'playlist_id:' . $PlayListId, 'url:' . rawurlencode($SongUrl))));
+        $raw = $this->SendLMSData(new LMSData(['playlists', 'edit'], ['cmd:add', 'playlist_id:'.$PlayListId, 'url:'.rawurlencode($SongUrl)]));
         $Data = new LMSTaggingData($raw);
-        if (property_exists($Data, 'url'))
-        {
-            if ($SongUrl <> (string) $Data->url)
+        if (property_exists($Data, 'url')) {
+            if ($SongUrl != (string) $Data->url) {
                 return false;
-        }
-        else
-        {
-            trigger_error("Error add File to Playlist.", E_USER_NOTICE);
+            }
+        } else {
+            trigger_error('Error add File to Playlist.', E_USER_NOTICE);
+
             return false;
         }
-        if (!is_null($Track))
-        {
+        if (!is_null($Track)) {
 //            $ret = $this->SendLMSData(new LMSData('playlists edit cmd%3Amove playlist_id%3A'.$PlayListId.' url%3A'.$SongUrl, LMSData::GetData));
 // index  toindex
         }
-//cmd%3Aadd playlist_id%3A52250 url%3Afile%3A%2F%2F%2FE%3A%2FServerFolders%2FMusik%2FAKB%2FAKB0048%20Complete%20Vocal%20Collection%2F1-03%20-%20AKB%20Sanjou!.mp3"        
+        //cmd%3Aadd playlist_id%3A52250 url%3Afile%3A%2F%2F%2FE%3A%2FServerFolders%2FMusik%2FAKB%2FAKB0048%20Complete%20Vocal%20Collection%2F1-03%20-%20AKB%20Sanjou!.mp3"
         return true;
     }
 
 //
     public function DeleteFileFromPlaylist(int $PlayListId, int $Track)
     {
-        $ret = $this->SendLMSData(new LMSData(array('playlists', 'edit'), array('cmd:delete', 'playlist_id:' . $PlayListId, 'index:' . $Track)));
+        $ret = $this->SendLMSData(new LMSData(['playlists', 'edit'], ['cmd:delete', 'playlist_id:'.$PlayListId, 'index:'.$Track]));
+
         return $ret;
     }
 
     public function GetPlaylists()
     {
-        $ret = $this->SendLMSData(new LMSData('playlists', array(0, 10000, 'tags:u')));
-        if ($ret === false)
+        $ret = $this->SendLMSData(new LMSData('playlists', [0, 10000, 'tags:u']));
+        if ($ret === false) {
             return false;
+        }
         $SongInfo = new LSMSongInfo($ret);
         $Playlists = $SongInfo->GetAllSongs();
-        foreach ($Playlists as $Key => $Playlist)
-        {
-            $raw = @$this->SendLMSData(new LMSData(array('playlists', 'tracks'), array(0, 10000, 'playlist_id:' . $Playlist['Id'], 'tags:d'), true));
-            if ($raw === false)
-            {
-                trigger_error("Error read Playlist " . $Playlist['Id'] . ".", E_USER_NOTICE);
-                $Playlists[$Key]['Playlist'] = $Playlists[$Key]['Playlist'] . " (ERROR ON READ DATA)";
-                $Playlists[$Key]['Tracks'] = "";
-                $Playlists[$Key]['Duration'] = "";
+        foreach ($Playlists as $Key => $Playlist) {
+            $raw = @$this->SendLMSData(new LMSData(['playlists', 'tracks'], [0, 10000, 'playlist_id:'.$Playlist['Id'], 'tags:d'], true));
+            if ($raw === false) {
+                trigger_error('Error read Playlist '.$Playlist['Id'].'.', E_USER_NOTICE);
+                $Playlists[$Key]['Playlist'] = $Playlists[$Key]['Playlist'].' (ERROR ON READ DATA)';
+                $Playlists[$Key]['Tracks'] = '';
+                $Playlists[$Key]['Duration'] = '';
                 continue;
             }
             $SongInfo = new LSMSongInfo($raw);
             $Playlists[$Key]['Tracks'] = $SongInfo->CountAllSongs();
             $Playlists[$Key]['Duration'] = $SongInfo->GetTotalDuration();
         }
+
         return $Playlists;
     }
 
-################## Action
+    //################# Action
 
     public function RequestAction($Ident, $Value)
     {
-        switch ($Ident)
-        {
-            case "PlayerSelect":
+        switch ($Ident) {
+            case 'PlayerSelect':
                 $this->SetValueInteger('PlayerSelect', $Value);
 
                 break;
-            case "RescanState":
-                if ($Value == 1)
+            case 'RescanState':
+                if ($Value == 1) {
                     $ret = $this->SendLMSData(new LMSData('abortscan', ''));
-                elseif ($Value == 2)
+                } elseif ($Value == 2) {
                     $ret = $this->SendLMSData(new LMSData('rescan', ''));
-                elseif ($Value == 3)
+                } elseif ($Value == 3) {
                     $ret = $this->SendLMSData(new LMSData('rescan playlists', ''));
-                elseif ($Value == 4)
+                } elseif ($Value == 4) {
                     $ret = $this->SendLMSData(new LMSData('wipecache', '', false));
-                if (($Value <> 0) and ( !$ret))
-                {
+                }
+                if (($Value != 0) and (!$ret)) {
                     echo 'Error on send Scan Command';
+
                     return false;
                 }
                 $this->SetValueInteger('RescanState', $Value);
@@ -538,53 +527,54 @@ class LMSSplitter extends IPSModule
         }
     }
 
-################## Privat
+    //################# Privat
 
     public function RefreshPlayerList()
     {
         $players = $this->GetNumberOfPlayers();
-        $Assosiation = array();
-        $Assosiation[] = array(-2, 'Keiner', "", 0x00ff00);
-        $Assosiation[] = array(-1, 'Alle', "", 0xff0000);
-        for ($i = 0; $i < $players; $i++)
-        {
-            $PlayerName = rawurldecode($this->SendLMSData(new LMSData(array('player', 'name', $i), '?')));
-            $Assosiation[] = array($i, $PlayerName, "", -1);
+        $Assosiation = [];
+        $Assosiation[] = [-2, 'Keiner', '', 0x00ff00];
+        $Assosiation[] = [-1, 'Alle', '', 0xff0000];
+        for ($i = 0; $i < $players; $i++) {
+            $PlayerName = rawurldecode($this->SendLMSData(new LMSData(['player', 'name', $i], '?')));
+            $Assosiation[] = [$i, $PlayerName, '', -1];
         }
-        $this->RegisterProfileIntegerEx("PlayerSelect" . $this->InstanceID . ".SqueezeboxServer", "Speaker", "", "", $Assosiation);
+        $this->RegisterProfileIntegerEx('PlayerSelect'.$this->InstanceID.'.SqueezeboxServer', 'Speaker', '', '', $Assosiation);
         $this->SetValueInteger('PlayerSelect', -2);
     }
 
     private function RefreshPlaylists()
     {
         $ScriptID = $this->ReadPropertyInteger('Playlistconfig');
-        if ($ScriptID == 0)
+        if ($ScriptID == 0) {
             return;
-        IPS_RunScriptEx($ScriptID, array('SENDER' => 'LMS', 'TARGET' => $this->InstanceID));
+        }
+        IPS_RunScriptEx($ScriptID, ['SENDER' => 'LMS', 'TARGET' => $this->InstanceID]);
     }
 
     public function DisplayPlaylist($Config)
     {
-        if (($Config === false) or ( !is_array($Config)))
+        if (($Config === false) or (!is_array($Config))) {
             trigger_error('Error on read Playlistconfig-Script', E_USER_NOTICE);
+        }
 
         $Data = $this->GetPlaylists();
-        if ($Data === false)
+        if ($Data === false) {
             return false;
+        }
         $HTMLData = $this->GetTableHeader($Config);
         $pos = 0;
 //          $CurrentTrack = GetValueInteger($this->GetIDForIdent('Index'));
-        if (isset($Data))
-        {
-            foreach ($Data as $Position => $Line)
-            {
+        if (isset($Data)) {
+            foreach ($Data as $Position => $Line) {
                 $Line['Position'] = $Position;
 //                if (array_key_exists('Duration', $Line))
 //                {
-                if ($Line['Duration'] > 3600)
-                    $Line['Duration'] = @date("H:i:s", $Line['Duration'] - 3600);
-                else
-                    $Line['Duration'] = @date("i:s", $Line['Duration']);
+                if ($Line['Duration'] > 3600) {
+                    $Line['Duration'] = @date('H:i:s', $Line['Duration'] - 3600);
+                } else {
+                    $Line['Duration'] = @date('i:s', $Line['Duration']);
+                }
                 /*                } else
                   {
                   $Line['Duration'] = '';
@@ -594,13 +584,12 @@ class LMSSplitter extends IPSModule
                  */
 //          $Line['Play'] = $Line['Position'] == $CurrentTrack ? '<div class="ipsIconArrowRight" is="null"></div>' : '';
 
-                $HTMLData .='<tr style="' . $Config['Style']['BR' . ($pos % 2 ? 'U' : 'G')] . '"
-          onclick="window.xhrGet=function xhrGet(o) {var HTTP = new XMLHttpRequest();HTTP.open(\'GET\',o.url,true);HTTP.send();};window.xhrGet({ url: \'hook/LMSPlaylist' . $this->InstanceID . '?Playlistid=' . $Line['Id'] . '\' })">';
-                foreach ($Config['Spalten'] as $feldIndex => $value)
-                {
-                    $HTMLData .= '<td style="' . $Config['Style']['DF' . ($Line['Position'] == $pos % 2 ? 'U' : 'G') . $feldIndex] . '">' . (string) $Line[$feldIndex] . '</td>';
+                $HTMLData .= '<tr style="'.$Config['Style']['BR'.($pos % 2 ? 'U' : 'G')].'"
+          onclick="window.xhrGet=function xhrGet(o) {var HTTP = new XMLHttpRequest();HTTP.open(\'GET\',o.url,true);HTTP.send();};window.xhrGet({ url: \'hook/LMSPlaylist'.$this->InstanceID.'?Playlistid='.$Line['Id'].'\' })">';
+                foreach ($Config['Spalten'] as $feldIndex => $value) {
+                    $HTMLData .= '<td style="'.$Config['Style']['DF'.($Line['Position'] == $pos % 2 ? 'U' : 'G').$feldIndex].'">'.(string) $Line[$feldIndex].'</td>';
                 }
-                $HTMLData .= '</tr>' . PHP_EOL;
+                $HTMLData .= '</tr>'.PHP_EOL;
                 $pos++;
             }
         }
@@ -611,54 +600,51 @@ class LMSSplitter extends IPSModule
     private function GetTableHeader($Config)
     {
         // Kopf der Tabelle erzeugen
-        $html = '<table style="' . $Config['Style']['T'] . '">' . PHP_EOL;
-        $html .= '<colgroup>' . PHP_EOL;
-        foreach ($Config['Spalten'] as $Index => $Value)
-        {
-            $html .= '<col width="' . $Config['Breite'][$Index] . '" />' . PHP_EOL;
+        $html = '<table style="'.$Config['Style']['T'].'">'.PHP_EOL;
+        $html .= '<colgroup>'.PHP_EOL;
+        foreach ($Config['Spalten'] as $Index => $Value) {
+            $html .= '<col width="'.$Config['Breite'][$Index].'" />'.PHP_EOL;
         }
-        $html .= '</colgroup>' . PHP_EOL;
-        $html .= '<thead style="' . $Config['Style']['H'] . '">' . PHP_EOL;
-        $html .= '<tr style="' . $Config['Style']['HR'] . '">';
-        foreach ($Config['Spalten'] as $Index => $Value)
-        {
-            $html .= '<th style="' . $Config['Style']['HF' . $Index] . '">' . $Value . '</th>';
+        $html .= '</colgroup>'.PHP_EOL;
+        $html .= '<thead style="'.$Config['Style']['H'].'">'.PHP_EOL;
+        $html .= '<tr style="'.$Config['Style']['HR'].'">';
+        foreach ($Config['Spalten'] as $Index => $Value) {
+            $html .= '<th style="'.$Config['Style']['HF'.$Index].'">'.$Value.'</th>';
         }
-        $html .= '</tr>' . PHP_EOL;
-        $html .= '</thead>' . PHP_EOL;
-        $html .= '<tbody style="' . $Config['Style']['B'] . '">' . PHP_EOL;
+        $html .= '</tr>'.PHP_EOL;
+        $html .= '</thead>'.PHP_EOL;
+        $html .= '<tbody style="'.$Config['Style']['B'].'">'.PHP_EOL;
+
         return $html;
     }
 
     private function GetTableFooter()
     {
-        $html = '</tbody>' . PHP_EOL;
-        $html .= '</table>' . PHP_EOL;
+        $html = '</tbody>'.PHP_EOL;
+        $html .= '</table>'.PHP_EOL;
+
         return $html;
     }
 
     private function RegisterHook($WebHook, $TargetID)
     {
-        $ids = IPS_GetInstanceListByModuleID("{015A6EB8-D6E5-4B93-B496-0D3F77AE9FE1}");
-        if (sizeof($ids) > 0)
-        {
-            $hooks = json_decode(IPS_GetProperty($ids[0], "Hooks"), true);
+        $ids = IPS_GetInstanceListByModuleID('{015A6EB8-D6E5-4B93-B496-0D3F77AE9FE1}');
+        if (count($ids) > 0) {
+            $hooks = json_decode(IPS_GetProperty($ids[0], 'Hooks'), true);
             $found = false;
-            foreach ($hooks as $index => $hook)
-            {
-                if ($hook['Hook'] == $WebHook)
-                {
-                    if ($hook['TargetID'] == $TargetID)
+            foreach ($hooks as $index => $hook) {
+                if ($hook['Hook'] == $WebHook) {
+                    if ($hook['TargetID'] == $TargetID) {
                         return;
+                    }
                     $hooks[$index]['TargetID'] = $TargetID;
                     $found = true;
                 }
             }
-            if (!$found)
-            {
-                $hooks[] = Array("Hook" => $WebHook, "TargetID" => $TargetID);
+            if (!$found) {
+                $hooks[] = ['Hook' => $WebHook, 'TargetID' => $TargetID];
             }
-            IPS_SetProperty($ids[0], "Hooks", json_encode($hooks));
+            IPS_SetProperty($ids[0], 'Hooks', json_encode($hooks));
             IPS_ApplyChanges($ids[0]);
         }
     }
@@ -682,6 +668,7 @@ class LMSSplitter extends IPSModule
             }
             SetValueInteger($PlayerSelect,-2);
 ';
+
         return $Script;
     }
 
@@ -762,246 +749,224 @@ $Config["Style"] = array(
 ### Konfig ENDE !!!
 LMS_DisplayPlaylist($_IPS["TARGET"],$Config);
 ?>';
+
         return $Script;
     }
 
-################## Decode Data
+    //################# Decode Data
 
     private function DecodeLMSEvent(LMSResponse $LMSData)
     {
-        switch ($LMSData->Data[0])
-        {
-            case "listen":
+        switch ($LMSData->Data[0]) {
+            case 'listen':
                 return true;
                 break;
-            case "scanner":
-                switch ($LMSData->Data[1])
-                {
-                    case "notify":
+            case 'scanner':
+                switch ($LMSData->Data[1]) {
+                    case 'notify':
                         $Data = new LMSTaggingData($LMSData->Data[2]);
 //                        IPS_LogMessage("scanner progress", print_r($Data, 1));
 //                        IPS_LogMessage("scanner progress2", print_r($Data->{0}, 1));
-                        switch (array_keys(get_object_vars($Data))[0])
-                        {
-                            case "end":
-                            case "exit":
-                                $this->SetValueString("RescanInfo", "");
-                                $this->SetValueString("RescanProgress", "");
+                        switch (array_keys(get_object_vars($Data))[0]) {
+                            case 'end':
+                            case 'exit':
+                                $this->SetValueString('RescanInfo', '');
+                                $this->SetValueString('RescanProgress', '');
+
                                 return true;
-                            case "progress":
-                                $Info = explode("||", $Data->progress);
+                            case 'progress':
+                                $Info = explode('||', $Data->progress);
                                 $StepInfo = $Info[2];
-                                if (strpos($StepInfo, "|"))
-                                {
-                                    $StepInfo = explode("|", $StepInfo)[1];
+                                if (strpos($StepInfo, '|')) {
+                                    $StepInfo = explode('|', $StepInfo)[1];
                                 }
-                                $this->SetValueString("RescanInfo", $StepInfo);
-                                $StepProgress = $Info[3] . " von " . $Info[4];
-                                $this->SetValueString("RescanProgress", $StepProgress);
+                                $this->SetValueString('RescanInfo', $StepInfo);
+                                $StepProgress = $Info[3].' von '.$Info[4];
+                                $this->SetValueString('RescanProgress', $StepProgress);
+
                                 return true;
                         }
                         break;
                 }
                 break;
-            case"wipecache":
-                $this->SetValueInteger("RescanState", 4); // Vollständig
+            case'wipecache':
+                $this->SetValueInteger('RescanState', 4); // Vollständig
                 return true;
 
-            case "rescan":
-                if (!isset($LMSData->Data[1]))
-                {
-                    $this->SetValueInteger("RescanState", 2); // einfacher
+            case 'rescan':
+                if (!isset($LMSData->Data[1])) {
+                    $this->SetValueInteger('RescanState', 2); // einfacher
                     return true;
-                }
-                else
-                {
-                    if (($LMSData->Data[1] == 'done') or ( $LMSData->Data[1] == '0'))
-                    {
-                        if ($this->SetValueInteger("RescanState", 0))   // fertig
+                } else {
+                    if (($LMSData->Data[1] == 'done') or ($LMSData->Data[1] == '0')) {
+                        if ($this->SetValueInteger('RescanState', 0)) {   // fertig
                             $this->RefreshPlaylists();
+                        }
+
                         return true;
-                    }
-                    elseif ($LMSData->Data[1] == 'playlists')
-                    {
-                        $this->SetValueInteger("RescanState", 3); // Playlists
+                    } elseif ($LMSData->Data[1] == 'playlists') {
+                        $this->SetValueInteger('RescanState', 3); // Playlists
                         return true;
-                    }
-                    elseif ($LMSData->Data[1] == '1')
-                    {
-                        //start   
-                        $this->SetValueInteger("RescanState", 2); // einfacher
+                    } elseif ($LMSData->Data[1] == '1') {
+                        //start
+                        $this->SetValueInteger('RescanState', 2); // einfacher
                         return true;
                     }
                 }
                 break;
         }
+
         return false;
     }
 
-################## DataPoints
-//Ankommend von Child-Device
+    //################# DataPoints
+    //Ankommend von Child-Device
 
     public function ForwardData($JSONString)
     {
         $Data = json_decode($JSONString);
 
-// Daten annehmen und Command zusammenfügen wenn Array
-        if (is_array($Data->LSQ->Command))
+        // Daten annehmen und Command zusammenfügen wenn Array
+        if (is_array($Data->LSQ->Command)) {
 //            $Data->LSQ->Command = implode(' ', $Data->LSQ->Command);
-            $Data->LSQ->Command[0] = $Data->LSQ->Address . ' ' . $Data->LSQ->Command[0];
-        else
-            $Data->LSQ->Command = $Data->LSQ->Address . ' ' . $Data->LSQ->Command;
-// LMS-Objekt erzeugen und Daten mit Adresse ergänzen.
+            $Data->LSQ->Command[0] = $Data->LSQ->Address.' '.$Data->LSQ->Command[0];
+        } else {
+            $Data->LSQ->Command = $Data->LSQ->Address.' '.$Data->LSQ->Command;
+        }
+        // LMS-Objekt erzeugen und Daten mit Adresse ergänzen.
 //        $LMSData = new LMSData($Data->LSQ->Address . ' ' . $Data->LSQ->Command, $Data->LSQ->Value, false);
         $LMSData = new LMSData($Data->LSQ->Command, $Data->LSQ->Value, false);
-// Senden über die Warteschlange
+        // Senden über die Warteschlange
         $ret = $this->SendLMSData($LMSData);
+
         return $ret;
     }
 
-// Ankommend von Parent-ClientSocket
+    // Ankommend von Parent-ClientSocket
     public function ReceiveData($JSONString)
     {
         $data = json_decode($JSONString);
-        $bufferID = $this->GetIDForIdent("BufferIN");
+        $bufferID = $this->GetIDForIdent('BufferIN');
 
-// Empfangs Lock setzen
-        if (!$this->lock("bufferin"))
-        {
-            trigger_error("ReceiveBuffer is locked", E_USER_WARNING);
+        // Empfangs Lock setzen
+        if (!$this->lock('bufferin')) {
+            trigger_error('ReceiveBuffer is locked', E_USER_WARNING);
+
             return false;
         }
 
-// Datenstream zusammenfügen
+        // Datenstream zusammenfügen
         $head = GetValueString($bufferID);
         SetValueString($bufferID, '');
 
-// Stream in einzelne Pakete schneiden
-        $packet = explode(chr(0x0d), $head . utf8_decode($data->Buffer));
+        // Stream in einzelne Pakete schneiden
+        $packet = explode(chr(0x0d), $head.utf8_decode($data->Buffer));
 
-// Rest vom Stream wieder in den Empfangsbuffer schieben
+        // Rest vom Stream wieder in den Empfangsbuffer schieben
         $tail = array_pop($packet);
         SetValueString($bufferID, $tail);
 
-// Empfangs Lock aufheben
-        $this->unlock("bufferin");
+        // Empfangs Lock aufheben
+        $this->unlock('bufferin');
 
-// Pakete verarbeiten
+        // Pakete verarbeiten
         $ReceiveOK = true;
-        foreach ($packet as $part)
-        {
+        foreach ($packet as $part) {
             $part = trim($part);
             $Data = new LMSResponse($part);
-// Server Antworten hier verarbeiten
-            if ($Data->Device == LMSResponse::isServer)
-            {
+            // Server Antworten hier verarbeiten
+            if ($Data->Device == LMSResponse::isServer) {
                 $isResponse = $this->WriteResponse($Data->Data);
-                if ($isResponse === true)
-                {
-// TODO LMS-Statusvariablen nachführen....
-// 
+                if ($isResponse === true) {
+                    // TODO LMS-Statusvariablen nachführen....
+//
                     continue; // später unnötig
-                }
-                elseif ($isResponse === false)
-                { //Info Daten von Server verarbeiten
+                } elseif ($isResponse === false) { //Info Daten von Server verarbeiten
 // TODO
-                    if (!$this->DecodeLMSEvent($Data))
-                        ; //IPS_LogMessage('LMSEvent', print_r($Data, 1));
-                }
-                else
-                {
+                    if (!$this->DecodeLMSEvent($Data)); //IPS_LogMessage('LMSEvent', print_r($Data, 1));
+                } else {
                     $ret = new Exception($isResponse);
                 }
             }
-// Nicht Server antworten zu den Devices weiter senden.
-            else
-            {
-                try
-                {
-                    $ReceiveOK = $this->SendDataToChildren(json_encode(Array("DataID" => "{CB5950B3-593C-4126-9F0F-8655A3944419}", "LMS" => $Data)));
-                }
-                catch (Exception $exc)
-                {
+            // Nicht Server antworten zu den Devices weiter senden.
+            else {
+                try {
+                    $ReceiveOK = $this->SendDataToChildren(json_encode(['DataID' => '{CB5950B3-593C-4126-9F0F-8655A3944419}', 'LMS' => $Data]));
+                } catch (Exception $exc) {
                     $ReceiveOK = false;
                     trigger_error($exc->getMessage(), E_USER_NOTICE);
 //                    $ret = new Exception($exc);
                 }
-                if ($Data->Data[0] == LSQResponse::client) // Client änderungen auch hier verarbeiten!
-                {
-                    IPS_RunScriptText("<?\nLMS_RefreshPlayerList(" . $this->InstanceID . ");");
+                if ($Data->Data[0] == LSQResponse::client) { // Client änderungen auch hier verarbeiten!
+                    IPS_RunScriptText("<?\nLMS_RefreshPlayerList(".$this->InstanceID.');');
                 }
             }
         }
+
         return $ReceiveOK;
     }
 
-// Sende-Routine an den Parent
+    // Sende-Routine an den Parent
     protected function SendDataToParent($LMSData)
     {
-        if (is_array($LMSData->Command))
+        if (is_array($LMSData->Command)) {
             $Commands = implode(' ', $LMSData->Command);
-        else
+        } else {
             $Commands = $LMSData->Command;
-        if (is_array($LMSData->Data))
-            $Data = $Commands . ' ' . implode(' ', $LMSData->Data);
-        else
-            $Data = $Commands . ' ' . $LMSData->Data;
+        }
+        if (is_array($LMSData->Data)) {
+            $Data = $Commands.' '.implode(' ', $LMSData->Data);
+        } else {
+            $Data = $Commands.' '.$LMSData->Data;
+        }
         $Data = trim($Data);
-//Semaphore setzen
-        if (!$this->lock("ToParent"))
-        {
-            throw new Exception("Can not send to LMS", E_USER_NOTICE);
+        //Semaphore setzen
+        if (!$this->lock('ToParent')) {
+            throw new Exception('Can not send to LMS', E_USER_NOTICE);
         }
-// Daten senden
-        try
-        {
-            $ret = parent::SendDataToParent(json_encode(Array("DataID" => "{79827379-F36E-4ADA-8A95-5F8D1DC92FA9}", "Buffer" => utf8_encode($Data . chr(0x0d)))));
+        // Daten senden
+        try {
+            $ret = parent::SendDataToParent(json_encode(['DataID' => '{79827379-F36E-4ADA-8A95-5F8D1DC92FA9}', 'Buffer' => utf8_encode($Data.chr(0x0d))]));
+        } catch (Exception $exc) {
+            // Senden fehlgeschlagen
+            $this->unlock('ToParent');
+
+            throw new Exception('LMS not reachable', E_USER_NOTICE);
         }
-        catch (Exception $exc)
-        {
-// Senden fehlgeschlagen
-            $this->unlock("ToParent");
-            throw new Exception("LMS not reachable", E_USER_NOTICE);
-        }
-        $this->unlock("ToParent");
+        $this->unlock('ToParent');
+
         return $ret;
     }
 
-
-################## Datenaustausch      
-// Sende-Routine des LMSData-Objektes an den Parent
+    //################# Datenaustausch
+    // Sende-Routine des LMSData-Objektes an den Parent
 
     private function SendLMSData(LMSData $LMSData)
     {
-        try
-        {
-            if ($this->ReadPropertyBoolean('Open') === false)
-            {
+        try {
+            if ($this->ReadPropertyBoolean('Open') === false) {
                 $this->SetStatus(IS_INACTIVE);
+
                 throw new Exception('Instance inactiv.', E_USER_NOTICE);
             }
 
             $ParentID = $this->GetParent();
-            if ($ParentID === false)
-            {
+            if ($ParentID === false) {
                 $this->SetStatus(IS_INACTIVE);
+
                 throw new Exception('Instance has no parent.', E_USER_NOTICE);
-            }
-            else
-            if (!$this->HasActiveParent($ParentID))
-            {
+            } elseif (!$this->HasActiveParent($ParentID)) {
                 $this->SetStatus(IS_EBASE);
+
                 throw new Exception('Instance has no active parent.', E_USER_NOTICE);
             }
-            if ($LMSData->needResponse)
-            {
-//Semaphore setzen für Sende-Routine
-                if (!$this->lock("LMSData"))
-                {
-                    throw new Exception("Can not send to LMS", E_USER_NOTICE);
+            if ($LMSData->needResponse) {
+                //Semaphore setzen für Sende-Routine
+                if (!$this->lock('LMSData')) {
+                    throw new Exception('Can not send to LMS', E_USER_NOTICE);
                 }
 
-// Noch Umbauen wie das Device ?!?!
+                // Noch Umbauen wie das Device ?!?!
                 /*            if ($LMSData->Typ == LMSData::GetData)
                   {
                   $WaitData = substr($LMSData->Data, 0, -2);
@@ -1011,46 +976,42 @@ LMS_DisplayPlaylist($_IPS["TARGET"],$Config);
                   $WaitData = $LMSData->Data;
                   } */
 
-// Anfrage für die Warteschleife schreiben
-                if (!$this->SetWaitForResponse($LMSData->Command))
-                {
-// Konnte Daten nicht in den ResponseBuffer schreiben
-// Lock der Sende-Routine aufheben.
-                    $this->unlock("LMSData");
-                    throw new Exception("Can not send to LMS, Buffer is locked", E_USER_NOTICE);
+                // Anfrage für die Warteschleife schreiben
+                if (!$this->SetWaitForResponse($LMSData->Command)) {
+                    // Konnte Daten nicht in den ResponseBuffer schreiben
+                    // Lock der Sende-Routine aufheben.
+                    $this->unlock('LMSData');
+
+                    throw new Exception('Can not send to LMS, Buffer is locked', E_USER_NOTICE);
                 }
 
-                try
-                {
-// Senden an Parent
+                try {
+                    // Senden an Parent
                     $this->SendDataToParent($LMSData);
-                }
-                catch (Exception $exc)
-                {
-// Konnte nicht senden
-//Daten in ResponseBuffer löschen
+                } catch (Exception $exc) {
+                    // Konnte nicht senden
+                    //Daten in ResponseBuffer löschen
                     $this->ResetWaitForResponse();
-// Lock der Sende-Routine aufheben.
-                    $this->unlock("LMSData");
+                    // Lock der Sende-Routine aufheben.
+                    $this->unlock('LMSData');
+
                     throw $exc;
                 }
-// Auf Antwort warten....
+                // Auf Antwort warten....
                 $ret = $this->WaitForResponse();
-// Lock der Sende-Routine aufheben.
-                $this->unlock("LMSData");
+                // Lock der Sende-Routine aufheben.
+                $this->unlock('LMSData');
 
-
-
-                if ($ret === false) // Response-Warteschleife lief in Timeout
-                {
-//  Daten in ResponseBuffer löschen                
+                if ($ret === false) { // Response-Warteschleife lief in Timeout
+//  Daten in ResponseBuffer löschen
                     $this->ResetWaitForResponse();
-// Fehler
+                    // Fehler
                     $this->SetStatus(IS_EBASE + 3);
-                    throw new Exception("No answer from LMS", E_USER_NOTICE);
+
+                    throw new Exception('No answer from LMS', E_USER_NOTICE);
                 }
 
-// Rückgabe ist eine Bestätigung von einem Befehl
+                // Rückgabe ist eine Bestätigung von einem Befehl
                 /*            if ($LMSData->Typ == LMSData::SendCommand)
                   {
                   if (trim($LMSData->Data) == trim($ret))
@@ -1068,149 +1029,146 @@ LMS_DisplayPlaylist($_IPS["TARGET"],$Config);
                   } */
                 return $ret;
             }
-// ohne Response, also ohne warten raussenden, 
-            else
-            {
-                try
-                {
+            // ohne Response, also ohne warten raussenden,
+            else {
+                try {
                     $this->SendDataToParent($LMSData);
-                }
-                catch (Exception $exc)
-                {
+                } catch (Exception $exc) {
                     throw $exc;
                 }
             }
-        }
-        catch (Exception $exc)
-        {
+        } catch (Exception $exc) {
             trigger_error($exc->getMessage(), $exc->getCode());
+
             return false;
         }
     }
 
-################## ResponseBuffer    -   private
+    //################# ResponseBuffer    -   private
 
     private function SetWaitForResponse($Data)
     {
-        if (is_array($Data))
+        if (is_array($Data)) {
             $Data = implode(' ', $Data);
-        if ($this->lock('BufferOut'))
-        {
+        }
+        if ($this->lock('BufferOut')) {
             $buffer = $this->GetIDForIdent('BufferOUT');
             $WaitForResponse = $this->GetIDForIdent('WaitForResponse');
             SetValueString($buffer, $Data);
             SetValueBoolean($WaitForResponse, true);
             $this->unlock('BufferOut');
+
             return true;
         }
+
         return false;
     }
 
     private function ResetWaitForResponse()
     {
-        if ($this->lock('BufferOut'))
-        {
+        if ($this->lock('BufferOut')) {
             $buffer = $this->GetIDForIdent('BufferOUT');
             $WaitForResponse = $this->GetIDForIdent('WaitForResponse');
             SetValueString($buffer, '');
             SetValueBoolean($WaitForResponse, false);
             $this->unlock('BufferOut');
+
             return true;
         }
+
         return false;
     }
 
     private function WaitForResponse()
     {
         $Event = $this->GetIDForIdent('WaitForResponse');
-        for ($i = 0; $i < 500; $i++)
-        {
-            if (GetValueBoolean($Event))
+        for ($i = 0; $i < 500; $i++) {
+            if (GetValueBoolean($Event)) {
                 IPS_Sleep(10);
-            else
-            {
-                if ($this->lock('BufferOut'))
-                {
+            } else {
+                if ($this->lock('BufferOut')) {
                     $buffer = $this->GetIDForIdent('BufferOUT');
                     $ret = GetValueString($buffer);
-                    SetValueString($buffer, "");
+                    SetValueString($buffer, '');
                     $this->unlock('BufferOut');
-                    if ($ret == '')
+                    if ($ret == '') {
                         return true;
-                    else
+                    } else {
                         return $ret;
+                    }
                 }
+
                 return false;
             }
         }
+
         return false;
     }
 
     private function WriteResponse($Array)
     {
-        if (is_array($Array))
+        if (is_array($Array)) {
             $Array = implode(' ', $Array);
+        }
 
         $Event = $this->GetIDForIdent('WaitForResponse');
-        if (!GetValueBoolean($Event))
+        if (!GetValueBoolean($Event)) {
             return false;
+        }
         $BufferID = $this->GetIDForIdent('BufferOUT');
         $BufferOut = GetValueString($BufferID);
         $Data = utf8_decode($Array /* implode(" ", $Array) */);
         $DataPos = strpos($Data, $BufferOut);
-        if (!($DataPos === false))
-        {
-            if ($this->lock('BufferOut'))
-            {
+        if (!($DataPos === false)) {
+            if ($this->lock('BufferOut')) {
 //                $Event = $this->GetIDForIdent('WaitForResponse');
                 SetValueString($BufferID, trim(substr($Data, $DataPos + strlen($BufferOut))));
                 SetValueBoolean($Event, false);
                 $this->unlock('BufferOut');
+
                 return true;
             }
+
             return 'Error on write ResponseBuffer';
         }
+
         return false;
     }
 
-################## SEMAPHOREN Helper  - private  
+    //################# SEMAPHOREN Helper  - private
 
     private function lock($ident)
     {
-        for ($i = 0; $i < 100; $i++)
-        {
-            if (IPS_SemaphoreEnter("LMS_" . (string) $this->InstanceID . (string) $ident, 1))
-            {
+        for ($i = 0; $i < 100; $i++) {
+            if (IPS_SemaphoreEnter('LMS_'.(string) $this->InstanceID.(string) $ident, 1)) {
                 return true;
-            }
-            else
-            {
+            } else {
                 IPS_Sleep(mt_rand(1, 5));
             }
         }
+
         return false;
     }
 
     private function unlock($ident)
     {
-        IPS_SemaphoreLeave("LMS_" . (string) $this->InstanceID . (string) $ident);
+        IPS_SemaphoreLeave('LMS_'.(string) $this->InstanceID.(string) $ident);
     }
 
-################## DUMMYS / WOARKAROUNDS - protected
+    //################# DUMMYS / WOARKAROUNDS - protected
 
     protected function GetParent()
     {
         $instance = IPS_GetInstance($this->InstanceID);
+
         return ($instance['ConnectionID'] > 0) ? $instance['ConnectionID'] : false;
     }
 
     protected function HasActiveParent($ParentID)
     {
-        if ($ParentID > 0)
-        {
+        if ($ParentID > 0) {
             $parent = IPS_GetInstance($ParentID);
-            if ($parent['InstanceStatus'] == 102)
-            {
+            if ($parent['InstanceStatus'] == 102) {
 //                $this->SetStatus(102);
                 return true;
             }
@@ -1221,17 +1179,15 @@ LMS_DisplayPlaylist($_IPS["TARGET"],$Config);
 
     protected function RequireParent($ModuleID, $Name = '')
     {
-
         $instance = IPS_GetInstance($this->InstanceID);
-        if ($instance['ConnectionID'] == 0)
-        {
-
+        if ($instance['ConnectionID'] == 0) {
             $parentID = IPS_CreateInstance($ModuleID);
             $instance = IPS_GetInstance($parentID);
-            if ($Name == '')
+            if ($Name == '') {
                 IPS_SetName($parentID, $instance['ModuleInfo']['ModuleName']);
-            else
+            } else {
                 IPS_SetName($parentID, $Name);
+            }
             IPS_ConnectInstance($this->InstanceID, $parentID);
         }
     }
@@ -1239,69 +1195,71 @@ LMS_DisplayPlaylist($_IPS["TARGET"],$Config);
     private function SetValueBoolean($Ident, $value)
     {
         $id = $this->GetIDForIdent($Ident);
-        if (GetValueBoolean($id) <> $value)
-        {
+        if (GetValueBoolean($id) != $value) {
             SetValueBoolean($id, $value);
+
             return true;
         }
+
         return false;
     }
 
     private function SetValueInteger($Ident, $value)
     {
         $id = $this->GetIDForIdent($Ident);
-        if (GetValueInteger($id) <> $value)
-        {
+        if (GetValueInteger($id) != $value) {
             SetValueInteger($id, $value);
+
             return true;
         }
+
         return false;
     }
 
     private function SetValueString($Ident, $value)
     {
         $id = $this->GetIDForIdent($Ident);
-        if (GetValueString($id) <> $value)
-        {
+        if (GetValueString($id) != $value) {
             SetValueString($id, $value);
+
             return true;
         }
+
         return false;
     }
 
     protected function SetStatus($InstanceStatus)
     {
-        if (IPS_GetKernelRunlevel() == KR_READY)
+        if (IPS_GetKernelRunlevel() == KR_READY) {
             $OldStatus = IPS_GetInstance($this->InstanceID)['InstanceStatus'];
-        else
+        } else {
             $OldStatus = -1;
-
-        if ($InstanceStatus <> $OldStatus)
-        {
-            parent::SetStatus($InstanceStatus);
-            if ($InstanceStatus == IS_ACTIVE)
-                $this->SetTimerInterval('KeepAlive', 3600000);
-            else
-                $this->SetTimerInterval('KeepAlive', 0);
-            return true;
         }
-        else
+
+        if ($InstanceStatus != $OldStatus) {
+            parent::SetStatus($InstanceStatus);
+            if ($InstanceStatus == IS_ACTIVE) {
+                $this->SetTimerInterval('KeepAlive', 3600000);
+            } else {
+                $this->SetTimerInterval('KeepAlive', 0);
+            }
+
+            return true;
+        } else {
             return false;
+        }
     }
 
     //Remove on next Symcon update
     protected function RegisterProfileInteger($Name, $Icon, $Prefix, $Suffix, $MinValue, $MaxValue, $StepSize)
     {
-
-        if (!IPS_VariableProfileExists($Name))
-        {
+        if (!IPS_VariableProfileExists($Name)) {
             IPS_CreateVariableProfile($Name, 1);
-        }
-        else
-        {
+        } else {
             $profile = IPS_GetVariableProfile($Name);
-            if ($profile['ProfileType'] != 1)
-                throw new Exception("Variable profile type does not match for profile " . $Name, E_USER_NOTICE);
+            if ($profile['ProfileType'] != 1) {
+                throw new Exception('Variable profile type does not match for profile '.$Name, E_USER_NOTICE);
+            }
         }
 
         IPS_SetVariableProfileIcon($Name, $Icon);
@@ -1311,35 +1269,26 @@ LMS_DisplayPlaylist($_IPS["TARGET"],$Config);
 
     protected function RegisterProfileIntegerEx($Name, $Icon, $Prefix, $Suffix, $Associations)
     {
-        if (sizeof($Associations) === 0)
-        {
+        if (count($Associations) === 0) {
             $MinValue = 0;
             $MaxValue = 0;
-        }
-        else
-        {
+        } else {
             $MinValue = $Associations[0][0];
-            $MaxValue = $Associations[sizeof($Associations) - 1][0];
+            $MaxValue = $Associations[count($Associations) - 1][0];
         }
 
         $this->RegisterProfileInteger($Name, $Icon, $Prefix, $Suffix, $MinValue, $MaxValue, 0);
-        $old = IPS_GetVariableProfile($Name)["Associations"];
+        $old = IPS_GetVariableProfile($Name)['Associations'];
         $OldValues = array_column($old, 'Value');
-        foreach ($Associations as $Association)
-        {
+        foreach ($Associations as $Association) {
             IPS_SetVariableProfileAssociation($Name, $Association[0], $Association[1], $Association[2], $Association[3]);
             $OldKey = array_search($Association[0], $OldValues);
-            if (!($OldKey === false ))
-            {
+            if (!($OldKey === false)) {
                 unset($OldValues[$OldKey]);
             }
         }
-        foreach ($OldValues as $OldKey => $OldValue)
-        {
+        foreach ($OldValues as $OldKey => $OldValue) {
             IPS_SetVariableProfileAssociation($Name, $OldValue, '', '', 0);
         }
     }
-
 }
-
-?>

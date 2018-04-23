@@ -1,7 +1,6 @@
-<?
+<?php
 
-if (@constant('IPS_BASE') == null) //Nur wenn Konstanten noch nicht bekannt sind.
-{
+if (@constant('IPS_BASE') == null) { //Nur wenn Konstanten noch nicht bekannt sind.
 // --- BASE MESSAGE
     define('IPS_BASE', 10000);                             //Base Message
     define('IPS_KERNELSHUTDOWN', IPS_BASE + 1);            //Pre Shutdown Message, Runlevel UNINIT Follows
@@ -83,14 +82,14 @@ if (@constant('IPS_BASE') == null) //Nur wenn Konstanten noch nicht bekannt sind
     define('EM_CHANGECYCLICDATETO', IPS_EVENTMESSAGE + 12);
     define('EM_CHANGECYCLICTIMEFROM', IPS_EVENTMESSAGE + 13);
     define('EM_CHANGECYCLICTIMETO', IPS_EVENTMESSAGE + 14);
-// --- MEDIA MANAGER
+    // --- MEDIA MANAGER
     define('IPS_MEDIAMESSAGE', IPS_BASE + 900);           //Media Manager Message
     define('MM_CREATE', IPS_MEDIAMESSAGE + 1);             //On Media Create
     define('MM_DELETE', IPS_MEDIAMESSAGE + 2);             //On Media Delete
     define('MM_CHANGEFILE', IPS_MEDIAMESSAGE + 3);         //On Media File changed
     define('MM_AVAILABLE', IPS_MEDIAMESSAGE + 4);          //Media Available Status changed
     define('MM_UPDATE', IPS_MEDIAMESSAGE + 5);
-// --- LINK MANAGER
+    // --- LINK MANAGER
     define('IPS_LINKMESSAGE', IPS_BASE + 1000);           //Link Manager Message
     define('LM_CREATE', IPS_LINKMESSAGE + 1);             //On Link Create
     define('LM_DELETE', IPS_LINKMESSAGE + 2);             //On Link Delete
@@ -115,14 +114,14 @@ if (@constant('IPS_BASE') == null) //Nur wenn Konstanten noch nicht bekannt sind
     define('PM_ASSOCIATIONADDED', IPS_PROFILEMESSAGE + 7);
     define('PM_ASSOCIATIONREMOVED', IPS_PROFILEMESSAGE + 8);
     define('PM_ASSOCIATIONCHANGED', IPS_PROFILEMESSAGE + 9);
-// --- TIMER POOL
+    // --- TIMER POOL
     define('IPS_TIMERMESSAGE', IPS_BASE + 1400);            //Timer Pool Message
     define('TM_REGISTER', IPS_TIMERMESSAGE + 1);
     define('TM_UNREGISTER', IPS_TIMERMESSAGE + 2);
     define('TM_SETINTERVAL', IPS_TIMERMESSAGE + 3);
     define('TM_UPDATE', IPS_TIMERMESSAGE + 4);
     define('TM_RUNNING', IPS_TIMERMESSAGE + 5);
-// --- STATUS CODES
+    // --- STATUS CODES
     define('IS_SBASE', 100);
     define('IS_CREATING', IS_SBASE + 1); //module is being created
     define('IS_ACTIVE', IS_SBASE + 2); //module created and running
@@ -146,7 +145,6 @@ if (@constant('IPS_BASE') == null) //Nur wenn Konstanten noch nicht bekannt sind
 
 class SqueezeboxBattery extends IPSModule
 {
-
     private $Address;
 
     public function Create()
@@ -154,10 +152,10 @@ class SqueezeboxBattery extends IPSModule
         //Never delete this line!
         parent::Create();
 
-        $this->RegisterPropertyString("Address", "");
-        $this->RegisterPropertyInteger("Interval", 30);
-        $this->RegisterPropertyString("Password", "1234");
-        $this->RegisterTimer("RequestState", 0, 'LSQB_RequestState($_IPS[\'TARGET\']);');
+        $this->RegisterPropertyString('Address', '');
+        $this->RegisterPropertyInteger('Interval', 30);
+        $this->RegisterPropertyString('Password', '1234');
+        $this->RegisterTimer('RequestState', 0, 'LSQB_RequestState($_IPS[\'TARGET\']);');
     }
 
     public function Destroy()
@@ -172,133 +170,124 @@ class SqueezeboxBattery extends IPSModule
 
         // Addresse prüfen
         $Address = $this->ReadPropertyString('Address');
-        if ($Address == '')
-        {
+        if ($Address == '') {
             $this->SetStatus(IS_ACTIVE);
-        } else
-        {
-            if (strpos($Address, '.')) // IP ?
-            {
-                if ($this->ReadPropertyInteger("Interval") < 30)
+        } else {
+            if (strpos($Address, '.')) { // IP ?
+                if ($this->ReadPropertyInteger('Interval') < 30) {
                     $this->SetStatus(203);
-                else
+                } else {
                     $this->SetStatus(IS_ACTIVE);
+                }
             }
         }
 
         // Profile anlegen
-        $this->RegisterProfileIntegerEx("Power.Squeezebox", "Information", "", "", Array(
-            Array(0, "offline", "", -1),
-            Array(3, "Netzbetrieb", "", -1),
-            Array(5, "Akkubetrieb", "", -1),
-            Array(7, "Netz- und Akkubetrieb", "", -1)
-        ));
+        $this->RegisterProfileIntegerEx('Power.Squeezebox', 'Information', '', '', [
+            [0, 'offline', '', -1],
+            [3, 'Netzbetrieb', '', -1],
+            [5, 'Akkubetrieb', '', -1],
+            [7, 'Netz- und Akkubetrieb', '', -1],
+        ]);
 
-        $this->RegisterProfileIntegerEx("Charge.Squeezebox", "Battery", "", "", Array(
-            Array(1, "Keine installiert", "", -1),
-            Array(2, "Ruhezustand", "", -1),
-            Array(3, "wird entladen", "", -1),
-            Array(8, "wird geladen", "", -1),
-            Array(24, "Ladezyklus pausiert", "", -1),
-            Array(35, "Warnung", "", -1)
-        ));
-        $this->RegisterProfileInteger("mAh.Squeezebox", "Intensity", "", " mAh", 0, 0, 0);
-
+        $this->RegisterProfileIntegerEx('Charge.Squeezebox', 'Battery', '', '', [
+            [1, 'Keine installiert', '', -1],
+            [2, 'Ruhezustand', '', -1],
+            [3, 'wird entladen', '', -1],
+            [8, 'wird geladen', '', -1],
+            [24, 'Ladezyklus pausiert', '', -1],
+            [35, 'Warnung', '', -1],
+        ]);
+        $this->RegisterProfileInteger('mAh.Squeezebox', 'Intensity', '', ' mAh', 0, 0, 0);
 
         //Status-Variablen anlegen
-        $this->RegisterVariableInteger("State", "Status", "Power.Squeezebox", 1);
-        $this->RegisterVariableFloat("SysVoltage", "Gerätespannung", "~Volt", 2);
-        $this->RegisterVariableFloat("WallVoltage", "Netzspannung", "~Volt", 3);
-        $this->RegisterVariableInteger("ChargeState", "Ladestatus", "Charge.Squeezebox", 4);
-        $this->RegisterVariableFloat("BatteryLevel", "Akkuladekapazität", "~Intensity.1", 5);
-        $this->RegisterVariableFloat("BatteryTemperature", "Akkutemperatur", "~Temperature", 6);
-        $this->RegisterVariableFloat("BatteryVoltage", "Akkuspannung", "~Volt", 7);
-        $this->RegisterVariableFloat("BatteryVMon1", "Akku vmon1", "~Volt", 8);
-        $this->RegisterVariableFloat("BatteryVMon2", "Akku vmon2", "~Volt", 9);
-        $this->RegisterVariableInteger("BatteryCapacity", "Akkukapazität", "mAh.Squeezebox", 10);
+        $this->RegisterVariableInteger('State', 'Status', 'Power.Squeezebox', 1);
+        $this->RegisterVariableFloat('SysVoltage', 'Gerätespannung', '~Volt', 2);
+        $this->RegisterVariableFloat('WallVoltage', 'Netzspannung', '~Volt', 3);
+        $this->RegisterVariableInteger('ChargeState', 'Ladestatus', 'Charge.Squeezebox', 4);
+        $this->RegisterVariableFloat('BatteryLevel', 'Akkuladekapazität', '~Intensity.1', 5);
+        $this->RegisterVariableFloat('BatteryTemperature', 'Akkutemperatur', '~Temperature', 6);
+        $this->RegisterVariableFloat('BatteryVoltage', 'Akkuspannung', '~Volt', 7);
+        $this->RegisterVariableFloat('BatteryVMon1', 'Akku vmon1', '~Volt', 8);
+        $this->RegisterVariableFloat('BatteryVMon2', 'Akku vmon2', '~Volt', 9);
+        $this->RegisterVariableInteger('BatteryCapacity', 'Akkukapazität', 'mAh.Squeezebox', 10);
 //        $this->RegisterVariableInteger("BatteryChargeRate", "Ladezyklen Akku", "", 11);
 //        $this->RegisterVariableInteger("BatteryDischargeRate", "Entladezyklen Akku", "", 12);
-        if ($this->Init(false))
-        {
-            if ($this->ReadPropertyInteger("Interval") >= 30)
-            {
-                $this->SetTimerInterval("RequestState", $this->ReadPropertyInteger("Interval"));
-            } else
-            {
-                $this->SetTimerInterval("RequestState", 0);
+        if ($this->Init(false)) {
+            if ($this->ReadPropertyInteger('Interval') >= 30) {
+                $this->SetTimerInterval('RequestState', $this->ReadPropertyInteger('Interval'));
+            } else {
+                $this->SetTimerInterval('RequestState', 0);
             }
             $this->RequestState();
-        } else
-        {
-            $this->SetTimerInterval("RequestState", 0);
+        } else {
+            $this->SetTimerInterval('RequestState', 0);
         }
     }
 
     /**
      * This function will be available automatically after the module is imported with the module control.
-     * Using the custom prefix this function will be callable from PHP and JSON-RPC through:
+     * Using the custom prefix this function will be callable from PHP and JSON-RPC through:.
      */
-################## PUBLIC
+    //################# PUBLIC
     /**
      * This function will be available automatically after the module is imported with the module control.
-     * Using the custom prefix this function will be callable from PHP and JSON-RPC through:
+     * Using the custom prefix this function will be callable from PHP and JSON-RPC through:.
      */
 
     /**
      * Aktuellen Status des Devices ermitteln und, wenn verbunden, abfragen..
      *
-     * @return boolean
+     * @return bool
      */
     public function RequestState()
     {
-        if($this->Init()=== false)
+        if ($this->Init() === false) {
             return false;
-        
+        }
+
         set_include_path(__DIR__);
-        require_once (__DIR__ . '/Net/SSH2.php');
+        require_once __DIR__.'/Net/SSH2.php';
 
-        $ssh = new Net_SSH2($this->ReadPropertyString("Address"));
-        $login = @$ssh->login('root', $this->ReadPropertyString("Password"));
-        if ($login == false)
-        {
-            trigger_error('Could not log in on SqueezeBox',E_USER_NOTICE);
+        $ssh = new Net_SSH2($this->ReadPropertyString('Address'));
+        $login = @$ssh->login('root', $this->ReadPropertyString('Password'));
+        if ($login == false) {
+            trigger_error('Could not log in on SqueezeBox', E_USER_NOTICE);
+
             return false;
         }
-        $PowerMode = (int) $ssh->exec("cat /sys/class/i2c-adapter/i2c-1/1-0010/power_mode");
+        $PowerMode = (int) $ssh->exec('cat /sys/class/i2c-adapter/i2c-1/1-0010/power_mode');
         $this->SetValueInteger('State', $PowerMode);
-        if ($PowerMode == 5)
-            $this->SetValueFloat("WallVoltage", 0);
-        else
-        {
-            $WallVoltage = round((int) $ssh->exec("cat /sys/class/i2c-adapter/i2c-1/1-0010/wall_voltage") / 1000, 1);
-            $this->SetValueFloat("WallVoltage", $WallVoltage);
+        if ($PowerMode == 5) {
+            $this->SetValueFloat('WallVoltage', 0);
+        } else {
+            $WallVoltage = round((int) $ssh->exec('cat /sys/class/i2c-adapter/i2c-1/1-0010/wall_voltage') / 1000, 1);
+            $this->SetValueFloat('WallVoltage', $WallVoltage);
         }
 
-        $SysVoltage = round((float) $ssh->exec("cat /sys/class/i2c-adapter/i2c-1/1-0010/sys_voltage") / 1000, 1);
+        $SysVoltage = round((float) $ssh->exec('cat /sys/class/i2c-adapter/i2c-1/1-0010/sys_voltage') / 1000, 1);
         $this->SetValueFloat('SysVoltage', $SysVoltage);
-        $ChargeState = (int) $ssh->exec("cat /sys/class/i2c-adapter/i2c-1/1-0010/charger_state");
+        $ChargeState = (int) $ssh->exec('cat /sys/class/i2c-adapter/i2c-1/1-0010/charger_state');
         $this->SetValueInteger('ChargeState', $ChargeState);
-        if ($ChargeState <> 1)
-        {
-            $BatteryLevel = (int) $ssh->exec("cat /sys/class/i2c-adapter/i2c-1/1-0010/battery_charge") / 2000;
+        if ($ChargeState != 1) {
+            $BatteryLevel = (int) $ssh->exec('cat /sys/class/i2c-adapter/i2c-1/1-0010/battery_charge') / 2000;
             $this->SetValueFloat('BatteryLevel', $BatteryLevel);
-            $BatteryCapacity = (int) $ssh->exec("cat /sys/class/i2c-adapter/i2c-1/1-0010/battery_capacity");
+            $BatteryCapacity = (int) $ssh->exec('cat /sys/class/i2c-adapter/i2c-1/1-0010/battery_capacity');
             $this->SetValueInteger('BatteryCapacity', $BatteryCapacity);
-            $BatteryTemperature = round((float) $ssh->exec("cat /sys/class/i2c-adapter/i2c-1/1-0010/battery_temperature") / 32, 1);
+            $BatteryTemperature = round((float) $ssh->exec('cat /sys/class/i2c-adapter/i2c-1/1-0010/battery_temperature') / 32, 1);
             $this->SetValueFloat('BatteryTemperature', $BatteryTemperature);
-            $BatteryVoltage = round((float) $ssh->exec("cat /sys/class/i2c-adapter/i2c-1/1-0010/battery_voltage") / 1000, 1);
+            $BatteryVoltage = round((float) $ssh->exec('cat /sys/class/i2c-adapter/i2c-1/1-0010/battery_voltage') / 1000, 1);
             $this->SetValueFloat('BatteryVoltage', $BatteryVoltage);
-            $BatteryVMon1 = round((float) $ssh->exec("cat /sys/class/i2c-adapter/i2c-1/1-0010/battery_vmon1_voltage") / 1000, 1);
+            $BatteryVMon1 = round((float) $ssh->exec('cat /sys/class/i2c-adapter/i2c-1/1-0010/battery_vmon1_voltage') / 1000, 1);
             $this->SetValueFloat('BatteryVMon1', $BatteryVMon1);
-            $BatteryVMon2 = round((float) $ssh->exec("cat /sys/class/i2c-adapter/i2c-1/1-0010/battery_vmon2_voltage") / 1000, 1);
+            $BatteryVMon2 = round((float) $ssh->exec('cat /sys/class/i2c-adapter/i2c-1/1-0010/battery_vmon2_voltage') / 1000, 1);
             $this->SetValueFloat('BatteryVMon2', $BatteryVMon2);
-//var_dump($ssh->exec("cat /sys/class/i2c-adapter/i2c-1/1-0010/charger_event"));
+        //var_dump($ssh->exec("cat /sys/class/i2c-adapter/i2c-1/1-0010/charger_event"));
 //            $BatteryChargeRate = (int) $ssh->exec("cat /sys/class/i2c-adapter/i2c-1/1-0010/battery_charge_rate");
 //            $this->SetValueInteger('BatteryChargeRate', $BatteryChargeRate);
 //            $BatteryDischargeRate = (int) $ssh->exec("cat /sys/class/i2c-adapter/i2c-1/1-0010/battery_discharge_rate");
 //            $this->SetValueInteger('BatteryDischargeRate', $BatteryDischargeRate);
-        } else
-        {
+        } else {
             $this->SetValueFloat('BatteryLevel', 0.0);
             $this->SetValueInteger('BatteryCapacity', 0);
             $this->SetValueFloat('BatteryTemperature', 0.0);
@@ -309,75 +298,74 @@ class SqueezeboxBattery extends IPSModule
 //            $this->SetValueInteger('BatteryDischargeRate', 0);
         }
 
-
-
-
         $ssh->disconnect();
 
         return true;
     }
 
-################## PRIVATE
+    //################# PRIVATE
 
     private function Init($throwException = true)
     {
-        $this->Address = $this->ReadPropertyString("Address");
-        if ($this->Address == '')
-        {
+        $this->Address = $this->ReadPropertyString('Address');
+        if ($this->Address == '') {
             $this->SetStatus(IS_INACTIVE);
-            if ($throwException)
-            {
+            if ($throwException) {
                 trigger_error('Address not set.', E_USER_NOTICE);
+
+                return false;
+            } else {
                 return false;
             }
-            else
-                return false;
         }
+
         return true;
     }
 
     private function SetValueBoolean($Ident, $value)
     {
         $id = $this->GetIDForIdent($Ident);
-        if (GetValueBoolean($id) <> $value)
+        if (GetValueBoolean($id) != $value) {
             SetValueBoolean($id, $value);
+        }
     }
 
     private function SetValueFloat($Ident, $value)
     {
         $id = $this->GetIDForIdent($Ident);
-        if (GetValueFloat($id) <> $value)
+        if (GetValueFloat($id) != $value) {
             SetValueFloat($id, $value);
+        }
     }
 
     private function SetValueInteger($Ident, $value)
     {
         $id = $this->GetIDForIdent($Ident);
-        if (GetValueInteger($id) <> $value)
+        if (GetValueInteger($id) != $value) {
             SetValueInteger($id, $value);
+        }
     }
 
     private function SetValueString($Ident, $value)
     {
         $id = $this->GetIDForIdent($Ident);
-        if (GetValueString($id) <> $value)
+        if (GetValueString($id) != $value) {
             SetValueString($id, $value);
+        }
     }
 
-################## DUMMYS / WOARKAROUNDS - protected
+    //################# DUMMYS / WOARKAROUNDS - protected
     //Remove on next Symcon update
 
     protected function RegisterProfileInteger($Name, $Icon, $Prefix, $Suffix, $MinValue, $MaxValue, $StepSize)
     {
-
-        if (!IPS_VariableProfileExists($Name))
-        {
+        if (!IPS_VariableProfileExists($Name)) {
             IPS_CreateVariableProfile($Name, 1);
-        } else
-        {
+        } else {
             $profile = IPS_GetVariableProfile($Name);
-            if ($profile['ProfileType'] != 1)
-                throw new Exception("Variable profile type does not match for profile " . $Name, E_USER_WARNING);
+            if ($profile['ProfileType'] != 1) {
+                throw new Exception('Variable profile type does not match for profile '.$Name, E_USER_WARNING);
+            }
         }
 
         IPS_SetVariableProfileIcon($Name, $Icon);
@@ -387,20 +375,17 @@ class SqueezeboxBattery extends IPSModule
 
     protected function RegisterProfileIntegerEx($Name, $Icon, $Prefix, $Suffix, $Associations)
     {
-        if (sizeof($Associations) === 0)
-        {
+        if (count($Associations) === 0) {
             $MinValue = 0;
             $MaxValue = 0;
-        } else
-        {
+        } else {
             $MinValue = $Associations[0][0];
-            $MaxValue = $Associations[sizeof($Associations) - 1][0];
+            $MaxValue = $Associations[count($Associations) - 1][0];
         }
 
         $this->RegisterProfileInteger($Name, $Icon, $Prefix, $Suffix, $MinValue, $MaxValue, 0);
 
-        foreach ($Associations as $Association)
-        {
+        foreach ($Associations as $Association) {
             IPS_SetVariableProfileAssociation($Name, $Association[0], $Association[1], $Association[2], $Association[3]);
         }
     }
@@ -408,24 +393,21 @@ class SqueezeboxBattery extends IPSModule
     protected function RegisterTimer($Name, $Interval, $Script)
     {
         $id = @IPS_GetObjectIDByIdent($Name, $this->InstanceID);
-        if ($id === false)
+        if ($id === false) {
             $id = 0;
+        }
 
-
-        if ($id > 0)
-        {
-            if (!IPS_EventExists($id))
-                throw new Exception("Ident with name " . $Name . " is used for wrong object type", E_USER_WARNING);
-
-            if (IPS_GetEvent($id)['EventType'] <> 1)
-            {
+        if ($id > 0) {
+            if (!IPS_EventExists($id)) {
+                throw new Exception('Ident with name '.$Name.' is used for wrong object type', E_USER_WARNING);
+            }
+            if (IPS_GetEvent($id)['EventType'] != 1) {
                 IPS_DeleteEvent($id);
                 $id = 0;
             }
         }
 
-        if ($id == 0)
-        {
+        if ($id == 0) {
             $id = IPS_CreateEvent(1);
             IPS_SetParent($id, $this->InstanceID);
             IPS_SetIdent($id, $Name);
@@ -433,13 +415,11 @@ class SqueezeboxBattery extends IPSModule
         IPS_SetName($id, $Name);
         IPS_SetHidden($id, true);
         IPS_SetEventScript($id, $Script);
-        if ($Interval > 0)
-        {
+        if ($Interval > 0) {
             IPS_SetEventCyclic($id, 0, 0, 0, 0, 1, $Interval);
 
             IPS_SetEventActive($id, true);
-        } else
-        {
+        } else {
             IPS_SetEventCyclic($id, 0, 0, 0, 0, 1, 1);
 
             IPS_SetEventActive($id, false);
@@ -449,10 +429,10 @@ class SqueezeboxBattery extends IPSModule
     protected function UnregisterTimer($Name)
     {
         $id = @IPS_GetObjectIDByIdent($Name, $this->InstanceID);
-        if ($id > 0)
-        {
-            if (!IPS_EventExists($id))
+        if ($id > 0) {
+            if (!IPS_EventExists($id)) {
                 throw new Exception('Timer not present', E_USER_WARNING);
+            }
             IPS_DeleteEvent($id);
         }
     }
@@ -460,37 +440,37 @@ class SqueezeboxBattery extends IPSModule
     protected function SetTimerInterval($Name, $Interval)
     {
         $id = @IPS_GetObjectIDByIdent($Name, $this->InstanceID);
-        if ($id === false)
+        if ($id === false) {
             throw new Exception('Timer not present', E_USER_WARNING);
-        if (!IPS_EventExists($id))
+        }
+        if (!IPS_EventExists($id)) {
             throw new Exception('Timer not present', E_USER_WARNING);
-
+        }
         $Event = IPS_GetEvent($id);
 
-        if ($Interval < 1)
-        {
-            if ($Event['EventActive'])
+        if ($Interval < 1) {
+            if ($Event['EventActive']) {
                 IPS_SetEventActive($id, false);
-        }
-        else
-        {
-            if ($Event['CyclicTimeValue'] <> $Interval)
+            }
+        } else {
+            if ($Event['CyclicTimeValue'] != $Interval) {
                 IPS_SetEventCyclic($id, 0, 0, 0, 0, 1, $Interval);
-            if (!$Event['EventActive'])
+            }
+            if (!$Event['EventActive']) {
                 IPS_SetEventActive($id, true);
+            }
         }
     }
 
     protected function SetStatus($InstanceStatus)
     {
-        if (IPS_GetKernelRunlevel() == KR_READY)
+        if (IPS_GetKernelRunlevel() == KR_READY) {
             $OldStatus = IPS_GetInstance($this->InstanceID)['InstanceStatus'];
-        else
-            $OldStatus =-1;
-        if ($InstanceStatus <> $OldStatus)
+        } else {
+            $OldStatus = -1;
+        }
+        if ($InstanceStatus != $OldStatus) {
             parent::SetStatus($InstanceStatus);
+        }
     }
-
 }
-
-?>

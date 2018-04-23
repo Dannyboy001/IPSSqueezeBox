@@ -45,15 +45,16 @@
  * THE SOFTWARE.
  *
  * @category  Crypt
- * @package   Crypt_TripleDES
+ *
  * @author    Jim Wigginton <terrafrost@php.net>
  * @copyright 2007 Jim Wigginton
  * @license   http://www.opensource.org/licenses/mit-license.html  MIT License
+ *
  * @link      http://phpseclib.sourceforge.net
  */
 
 /**
- * Include Crypt_DES
+ * Include Crypt_DES.
  */
 if (!class_exists('Crypt_DES')) {
     include_once 'DES.php';
@@ -63,23 +64,23 @@ if (!class_exists('Crypt_DES')) {
  * @access public
  * @see Crypt_TripleDES::Crypt_TripleDES()
  */
-/**
+/*
  * Encrypt / decrypt using inner chaining
  *
  * Inner chaining is used by SSH-1 and is generally considered to be less secure then outer chaining (CRYPT_DES_MODE_CBC3).
  */
 define('CRYPT_MODE_3CBC', -2);
-/**
+/*
  * BC version of the above.
  */
 define('CRYPT_DES_MODE_3CBC', -2);
-/**
+/*
  * Encrypt / decrypt using outer chaining
  *
  * Outer chaining is used by SSH-2 and when the mode is set to CRYPT_DES_MODE_CBC.
  */
 define('CRYPT_MODE_CBC3', CRYPT_MODE_CBC);
-/**
+/*
  * BC version of the above.
  */
 define('CRYPT_DES_MODE_CBC3', CRYPT_MODE_CBC3);
@@ -88,89 +89,85 @@ define('CRYPT_DES_MODE_CBC3', CRYPT_MODE_CBC3);
 /**
  * Pure-PHP implementation of Triple DES.
  *
- * @package Crypt_TripleDES
  * @author  Jim Wigginton <terrafrost@php.net>
- * @access  public
  */
 class Crypt_TripleDES extends Crypt_DES
 {
     /**
-     * The default password key_size used by setPassword()
+     * The default password key_size used by setPassword().
      *
      * @see Crypt_DES::password_key_size
      * @see Crypt_Base::password_key_size
      * @see Crypt_Base::setPassword()
-     * @var Integer
-     * @access private
+     *
+     * @var int
      */
-    var $password_key_size = 24;
+    public $password_key_size = 24;
 
     /**
-     * The default salt used by setPassword()
+     * The default salt used by setPassword().
      *
      * @see Crypt_Base::password_default_salt
      * @see Crypt_Base::setPassword()
-     * @var String
-     * @access private
+     *
+     * @var string
      */
-    var $password_default_salt = 'phpseclib';
+    public $password_default_salt = 'phpseclib';
 
     /**
      * The namespace used by the cipher for its constants.
      *
      * @see Crypt_DES::const_namespace
      * @see Crypt_Base::const_namespace
-     * @var String
-     * @access private
+     *
+     * @var string
      */
-    var $const_namespace = 'DES';
+    public $const_namespace = 'DES';
 
     /**
-     * The mcrypt specific name of the cipher
+     * The mcrypt specific name of the cipher.
      *
      * @see Crypt_DES::cipher_name_mcrypt
      * @see Crypt_Base::cipher_name_mcrypt
-     * @var String
-     * @access private
+     *
+     * @var string
      */
-    var $cipher_name_mcrypt = 'tripledes';
+    public $cipher_name_mcrypt = 'tripledes';
 
     /**
-     * Optimizing value while CFB-encrypting
+     * Optimizing value while CFB-encrypting.
      *
      * @see Crypt_Base::cfb_init_len
-     * @var Integer
-     * @access private
+     *
+     * @var int
      */
-    var $cfb_init_len = 750;
+    public $cfb_init_len = 750;
 
     /**
-     * max possible size of $key
+     * max possible size of $key.
      *
      * @see Crypt_TripleDES::setKey()
      * @see Crypt_DES::setKey()
-     * @var String
-     * @access private
-     */
-    var $key_size_max = 24;
-
-    /**
-     * Internal flag whether using CRYPT_DES_MODE_3CBC or not
      *
-     * @var Boolean
-     * @access private
+     * @var string
      */
-    var $mode_3cbc;
+    public $key_size_max = 24;
 
     /**
-     * The Crypt_DES objects
+     * Internal flag whether using CRYPT_DES_MODE_3CBC or not.
+     *
+     * @var bool
+     */
+    public $mode_3cbc;
+
+    /**
+     * The Crypt_DES objects.
      *
      * Used only if $mode_3cbc === true
      *
-     * @var Array
-     * @access private
+     * @var array
      */
-    var $des;
+    public $des;
 
     /**
      * Default Constructor.
@@ -195,10 +192,10 @@ class Crypt_TripleDES extends Crypt_DES
      *
      * @see Crypt_DES::Crypt_DES()
      * @see Crypt_Base::Crypt_Base()
+     *
      * @param optional Integer $mode
-     * @access public
      */
-    function Crypt_TripleDES($mode = CRYPT_MODE_CBC)
+    public function Crypt_TripleDES($mode = CRYPT_MODE_CBC)
     {
         switch ($mode) {
             // In case of CRYPT_DES_MODE_3CBC, we init as CRYPT_DES_MODE_CBC
@@ -208,11 +205,11 @@ class Crypt_TripleDES extends Crypt_DES
                 $this->mode_3cbc = true;
 
                 // This three $des'es will do the 3CBC work (if $key > 64bits)
-                $this->des = array(
+                $this->des = [
                     new Crypt_DES(CRYPT_MODE_CBC),
                     new Crypt_DES(CRYPT_MODE_CBC),
                     new Crypt_DES(CRYPT_MODE_CBC),
-                );
+                ];
 
                 // we're going to be doing the padding, ourselves, so disable it in the Crypt_DES objects
                 $this->des[0]->disablePadding();
@@ -226,37 +223,38 @@ class Crypt_TripleDES extends Crypt_DES
     }
 
     /**
-     * Test for engine validity
+     * Test for engine validity.
      *
      * This is mainly just a wrapper to set things up for Crypt_Base::isValidEngine()
      *
      * @see Crypt_Base::Crypt_Base()
-     * @param Integer $engine
-     * @access public
-     * @return Boolean
+     *
+     * @param int $engine
+     *
+     * @return bool
      */
-    function isValidEngine($engine)
+    public function isValidEngine($engine)
     {
         if ($engine == CRYPT_ENGINE_OPENSSL) {
             $this->cipher_name_openssl_ecb = 'des-ede3';
             $mode = $this->_openssl_translate_mode();
-            $this->cipher_name_openssl = $mode == 'ecb' ? 'des-ede3' : 'des-ede3-' . $mode;
+            $this->cipher_name_openssl = $mode == 'ecb' ? 'des-ede3' : 'des-ede3-'.$mode;
         }
 
         return parent::isValidEngine($engine);
     }
 
     /**
-     * Sets the initialization vector. (optional)
+     * Sets the initialization vector. (optional).
      *
      * SetIV is not required when CRYPT_DES_MODE_ECB is being used.  If not explicitly set, it'll be assumed
      * to be all zero's.
      *
      * @see Crypt_Base::setIV()
-     * @access public
-     * @param String $iv
+     *
+     * @param string $iv
      */
-    function setIV($iv)
+    public function setIV($iv)
     {
         parent::setIV($iv);
         if ($this->mode_3cbc) {
@@ -276,12 +274,12 @@ class Crypt_TripleDES extends Crypt_DES
      *
      * If the key is not explicitly set, it'll be assumed to be all null bytes.
      *
-     * @access public
      * @see Crypt_DES::setKey()
      * @see Crypt_Base::setKey()
-     * @param String $key
+     *
+     * @param string $key
      */
-    function setKey($key)
+    public function setKey($key)
     {
         $length = strlen($key);
         if ($length > 8) {
@@ -299,8 +297,8 @@ class Crypt_TripleDES extends Crypt_DES
         // because we will then act as regular DES-CBC with just a <= 64bit key.
         // So only if the key > 64bits (> 8 bytes) we will call setKey() for the 3 $des.
         if ($this->mode_3cbc && $length > 8) {
-            $this->des[0]->setKey(substr($key,  0, 8));
-            $this->des[1]->setKey(substr($key,  8, 8));
+            $this->des[0]->setKey(substr($key, 0, 8));
+            $this->des[1]->setKey(substr($key, 8, 8));
             $this->des[2]->setKey(substr($key, 16, 8));
         }
     }
@@ -309,11 +307,12 @@ class Crypt_TripleDES extends Crypt_DES
      * Encrypts a message.
      *
      * @see Crypt_Base::encrypt()
-     * @access public
-     * @param String $plaintext
-     * @return String $cipertext
+     *
+     * @param string $plaintext
+     *
+     * @return string $cipertext
      */
-    function encrypt($plaintext)
+    public function encrypt($plaintext)
     {
         // parent::en/decrypt() is able to do all the work for all modes and keylengths,
         // except for: CRYPT_MODE_3CBC (inner chaining CBC) with a key > 64bits
@@ -336,11 +335,12 @@ class Crypt_TripleDES extends Crypt_DES
      * Decrypts a message.
      *
      * @see Crypt_Base::decrypt()
-     * @access public
-     * @param String $ciphertext
-     * @return String $plaintext
+     *
+     * @param string $ciphertext
+     *
+     * @return string $plaintext
      */
-    function decrypt($ciphertext)
+    public function decrypt($ciphertext)
     {
         if ($this->mode_3cbc && strlen($this->key) > 8) {
             return $this->_unpad(
@@ -393,9 +393,8 @@ class Crypt_TripleDES extends Crypt_DES
      *
      * @see Crypt_Base::enableContinuousBuffer()
      * @see Crypt_TripleDES::disableContinuousBuffer()
-     * @access public
      */
-    function enableContinuousBuffer()
+    public function enableContinuousBuffer()
     {
         parent::enableContinuousBuffer();
         if ($this->mode_3cbc) {
@@ -412,9 +411,8 @@ class Crypt_TripleDES extends Crypt_DES
      *
      * @see Crypt_Base::disableContinuousBuffer()
      * @see Crypt_TripleDES::enableContinuousBuffer()
-     * @access public
      */
-    function disableContinuousBuffer()
+    public function disableContinuousBuffer()
     {
         parent::disableContinuousBuffer();
         if ($this->mode_3cbc) {
@@ -425,13 +423,12 @@ class Crypt_TripleDES extends Crypt_DES
     }
 
     /**
-     * Creates the key schedule
+     * Creates the key schedule.
      *
      * @see Crypt_DES::_setupKey()
      * @see Crypt_Base::_setupKey()
-     * @access private
      */
-    function _setupKey()
+    public function _setupKey()
     {
         switch (true) {
             // if $key <= 64bits we configure our internal pure-php cipher engine
@@ -460,15 +457,16 @@ class Crypt_TripleDES extends Crypt_DES
     }
 
     /**
-     * Sets the internal crypt engine
+     * Sets the internal crypt engine.
      *
      * @see Crypt_Base::Crypt_Base()
      * @see Crypt_Base::setPreferredEngine()
-     * @param Integer $engine
-     * @access public
-     * @return Integer
+     *
+     * @param int $engine
+     *
+     * @return int
      */
-    function setPreferredEngine($engine)
+    public function setPreferredEngine($engine)
     {
         if ($this->mode_3cbc) {
             $this->des[0]->setPreferredEngine($engine);
